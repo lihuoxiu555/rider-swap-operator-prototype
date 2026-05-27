@@ -28,6 +28,26 @@ python3 main.py
 
 访问：http://127.0.0.1:8766/index.html
 
+## 在线预览（团队直接点链接）
+
+通过 **GitHub Pages** 发布 `docs/` 目录（含与 `prototype/index.html` 同步的入口页）：
+
+| 内容 | 链接 |
+|------|------|
+| **交互原型** | https://lihuoxiu555.github.io/rider-swap-operator-prototype/ |
+| **PRD 等文档** | https://lihuoxiu555.github.io/rider-swap-operator-prototype/PRD.html 等（同目录下 `.md` 为纯文本；推荐在 GitHub 仓库 `docs/` 中查看 Mermaid） |
+
+仓库 **Settings → Pages**：Source 选 **Deploy from a branch**，Branch `main`，Folder **`/docs`**。`git push` 后约 1～2 分钟生效。
+
+**改原型后请同步再推送**（Pages 读的是 `docs/index.html`）：
+
+```bash
+cp prototype/index.html docs/index.html
+git add docs/index.html && git commit -m "sync prototype to pages" && git push
+```
+
+其他可选方式：公司内网静态站（Nginx/OSS）、Netlify / Vercel、临时 ngrok（见下文 §4）。
+
 ## 团队分享与同步更新（推荐）
 
 本原型 = `prototype/index.html` + `docs/` + `main.py`，**改文件即生效**，无需编译。要让大家看到同一份、且你更新后他们能跟上，建议用 **Git 仓库**（GitHub / GitLab / Gitee / 公司 Git）。

@@ -5,6 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$ROOT/prototype/index.html"
 DST="$ROOT/docs/index.html"
+DOC_VIEWER_SRC="$ROOT/prototype/docs/index.html"
+DOC_VIEWER_DST="$ROOT/docs/documentation/index.html"
 PAGES_URL="https://lihuoxiu555.github.io/rider-swap-operator-prototype/"
 
 usage() {
@@ -51,6 +53,23 @@ fi
 mkdir -p "$(dirname "$DST")"
 cp "$SRC" "$DST"
 echo "已同步: prototype/index.html → docs/index.html"
+if [[ -f "$DOC_VIEWER_SRC" ]]; then
+  mkdir -p "$(dirname "$DOC_VIEWER_DST")"
+  cp "$DOC_VIEWER_SRC" "$DOC_VIEWER_DST"
+  echo "已同步: prototype/docs/index.html → docs/documentation/index.html"
+  if [[ -d "$ROOT/prototype/docs/md" ]]; then
+    rm -rf "$ROOT/docs/documentation/md"
+    cp -R "$ROOT/prototype/docs/md" "$ROOT/docs/documentation/md"
+    echo "已同步: prototype/docs/md → docs/documentation/md"
+  fi
+fi
+DOC_SRC_DIR="$ROOT/docs"
+DOC_DST_DIR="$ROOT/prototype/docs/md"
+if [[ -d "$DOC_SRC_DIR" ]]; then
+  mkdir -p "$DOC_DST_DIR"
+  cp "$DOC_SRC_DIR"/*.md "$DOC_DST_DIR/" 2>/dev/null || true
+  echo "已同步: docs/*.md → prototype/docs/md"
+fi
 
 if ! $do_commit; then
   echo "下一步: git add docs/index.html prototype/index.html && git commit && git push"
@@ -64,6 +83,7 @@ if [[ -z "$msg" ]]; then
 fi
 
 git add "$DST" "$SRC"
+[[ -f "$DOC_VIEWER_DST" ]] && git add "$DOC_VIEWER_DST"
 
 if git diff --cached --quiet; then
   echo "无待提交改动（prototype 与 docs/index.html 均已是最新）"

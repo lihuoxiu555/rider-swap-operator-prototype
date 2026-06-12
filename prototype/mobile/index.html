@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>智格换电 · 骑手端</title>
+  <style>
+    :root {
+      --blue: #2f6bff;
+      --blue-dark: #1a4fd6;
+      --gold: #e8c9a0;
+      --gold-text: #8b6914;
+      --bg: #f4f6f8;
+      --text: #1a2233;
+      --muted: #8a94a6;
+      --border: #e8ecf0;
+      --warn: #fff8e6;
+      --warn-border: #f0d878;
+      --danger: #e34d4d;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --phone-w: 390px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+      background: #dfe3ea;
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .workspace {
+      display: flex;
+      gap: 20px;
+      padding: 16px;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .demo-panel {
+      width: 280px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.08);
+      font-size: 13px;
+    }
+    .demo-panel h2 { font-size: 14px; margin-bottom: 10px; }
+    .demo-panel label { display: block; margin: 8px 0 4px; color: var(--muted); }
+    .demo-panel select, .demo-panel button {
+      width: 100%; padding: 8px 10px; border-radius: 8px;
+      border: 1px solid var(--border); font-size: 13px;
+    }
+    .demo-panel button.primary {
+      background: var(--blue); color: #fff; border: none; margin-top: 10px; cursor: pointer;
+    }
+    .demo-panel a { color: var(--blue); font-size: 12px; }
+    .phone-wrap {
+      width: var(--phone-w);
+      height: calc(100vh - 32px);
+      max-height: 844px;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(15,23,42,.18);
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+    .status-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: calc(6px + var(--safe-top)) 16px 4px;
+      font-size: 14px; font-weight: 600; background: #fff; flex-shrink: 0;
+    }
+    .status-icons { display: flex; gap: 4px; font-size: 12px; align-items: center; }
+    .wx-capsule {
+      display: flex; border: 1px solid #ddd; border-radius: 16px; overflow: hidden; margin-left: 8px;
+    }
+    .wx-capsule span { padding: 4px 10px; font-size: 12px; }
+    .wx-capsule span + span { border-left: 1px solid #ddd; }
+    .app-header {
+      text-align: center; font-size: 17px; font-weight: 600;
+      padding: 6px 0 8px; background: #fff; flex-shrink: 0;
+    }
+    .service-banner {
+      background: #fffbe8; color: #7a6520; font-size: 11px;
+      text-align: center; padding: 6px 12px; flex-shrink: 0;
+    }
+    .screen {
+      flex: 1; overflow: hidden; display: none; flex-direction: column;
+      background: var(--bg); position: relative;
+    }
+    .screen.active { display: flex; }
+
+    /* 首页地图 */
+    .map-area {
+      flex: 1; position: relative;
+      background: linear-gradient(180deg, #dce8f5 0%, #e8eef4 40%, #d4e4d0 100%);
+      overflow: hidden;
+    }
+    .map-area::before {
+      content: ""; position: absolute; inset: 0; opacity: .35;
+      background-image:
+        linear-gradient(#b8c8d8 1px, transparent 1px),
+        linear-gradient(90deg, #b8c8d8 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    .map-label {
+      position: absolute; font-size: 11px; color: #5a7088; font-weight: 500;
+    }
+    .map-pin {
+      position: absolute; width: 28px; height: 36px;
+      transform: translate(-50%, -100%); cursor: pointer;
+    }
+    .map-pin::before {
+      content: ""; position: absolute; left: 50%; bottom: 0;
+      width: 10px; height: 10px; background: var(--blue);
+      border-radius: 50%; transform: translateX(-50%);
+      box-shadow: 0 0 0 4px rgba(47,107,255,.25);
+    }
+    .map-pin::after {
+      content: ""; position: absolute; left: 50%; top: 0;
+      width: 22px; height: 22px; background: var(--danger);
+      border-radius: 50% 50% 50% 0; transform: translateX(-50%) rotate(-45deg);
+      border: 2px solid #fff;
+    }
+    .map-provider {
+      position: absolute; right: 8px; bottom: 100px;
+      font-size: 10px; color: var(--muted); background: rgba(255,255,255,.8);
+      padding: 2px 6px; border-radius: 4px;
+    }
+    .map-fab-row {
+      position: absolute; left: 0; right: 0; bottom: 12px;
+      display: flex; align-items: flex-end; justify-content: center; gap: 12px; padding: 0 16px;
+    }
+    .fab-circle {
+      width: 44px; height: 44px; border-radius: 50%; background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,.12); border: none;
+      font-size: 18px; cursor: pointer; display: grid; place-items: center;
+    }
+    .fab-scan {
+      flex: 1; max-width: 200px; height: 48px; border-radius: 24px;
+      background: var(--blue); color: #fff; border: none; font-size: 16px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 16px rgba(47,107,255,.4); cursor: pointer;
+    }
+
+    /* 底部导航 */
+    .tab-bar {
+      display: flex; background: #fff; border-top: 1px solid var(--border);
+      padding-bottom: var(--safe-bottom); flex-shrink: 0;
+    }
+    .tab-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 8px 0 6px; font-size: 11px; color: var(--muted);
+      border: none; background: none; cursor: pointer;
+    }
+    .tab-item.active { color: var(--blue); font-weight: 600; }
+    .tab-item .icon { font-size: 22px; line-height: 1; margin-bottom: 2px; }
+
+    /* 我的 */
+    .mine-scroll { flex: 1; overflow-y: auto; }
+    .login-hero {
+      padding: 48px 24px 32px; text-align: center; background: #fff;
+    }
+    .logo {
+      width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 16px;
+      background: linear-gradient(135deg, #1a2233, #3d4f6f);
+      display: grid; place-items: center; color: #fff; font-size: 28px; font-weight: 800;
+    }
+    .login-hero h1 { font-size: 26px; letter-spacing: 2px; margin-bottom: 8px; }
+    .login-hero p { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+    .btn-login {
+      width: 100%; max-width: 320px; height: 48px; border-radius: 24px;
+      background: var(--blue); color: #fff; border: none; font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+    .agree-row {
+      display: flex; gap: 8px; align-items: flex-start; margin-top: 20px;
+      font-size: 12px; color: var(--muted); text-align: left; max-width: 320px; margin-left: auto; margin-right: auto;
+    }
+    .agree-row a { color: var(--blue); }
+    .profile-head {
+      display: flex; align-items: center; padding: 16px; background: #fff; gap: 12px;
+    }
+    .avatar {
+      width: 48px; height: 48px; border-radius: 50%; background: #e8ecf0;
+      display: grid; place-items: center; font-size: 20px;
+    }
+    .profile-head .phone { font-size: 18px; font-weight: 600; }
+    .tag-sm {
+      display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px;
+      background: #f0f2f5; color: var(--muted); margin-left: 8px;
+    }
+    .tag-sm.ok { background: #e6f7ee; color: #1a8f4a; }
+    .settings-btn {
+      margin-left: auto; border: none; background: none; font-size: 22px; cursor: pointer; color: var(--muted);
+    }
+    .service-card {
+      margin: 12px 16px; padding: 18px 16px; border-radius: 12px;
+      background: linear-gradient(135deg, #3d7bff 0%, #2f6bff 50%, #1a4fd6 100%);
+      color: #fff; display: flex; align-items: center; justify-content: space-between;
+      min-height: 88px; position: relative; overflow: hidden;
+    }
+    .service-card::after {
+      content: "⚡"; position: absolute; right: 12px; bottom: -8px;
+      font-size: 64px; opacity: .15;
+    }
+    .service-card h3 { font-size: 17px; margin-bottom: 6px; }
+    .service-card p { font-size: 12px; opacity: .9; }
+    .service-card.warn { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .service-card.channel { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+    .btn-gold {
+      background: var(--gold); color: var(--gold-text); border: none;
+      padding: 10px 18px; border-radius: 20px; font-size: 14px; font-weight: 600;
+      cursor: pointer; flex-shrink: 0; z-index: 1;
+    }
+    .section-card {
+      margin: 0 16px 12px; background: #fff; border-radius: 12px; padding: 14px 12px;
+    }
+    .section-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; padding-left: 4px; }
+    .grid-4 {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 4px;
+    }
+    .grid-item {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 8px 4px; border: none; background: none; cursor: pointer; font-size: 11px; color: var(--text);
+    }
+    .grid-item .gi {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: grid; place-items: center; font-size: 20px;
+      background: #eef3ff; color: var(--blue);
+    }
+    .grid-item .gi.orange { background: #fff4e6; color: #f97316; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid-2 .grid-item { flex-direction: row; justify-content: flex-start; padding: 12px; gap: 10px; }
+    .grid-2 .gi { width: 36px; height: 36px; font-size: 18px; flex-shrink: 0; }
+
+    /* 订单 */
+    .sub-tabs {
+      display: flex; background: #fff; padding: 0 12px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .sub-tab {
+      flex: 1; padding: 12px 0; border: none; background: none; font-size: 14px;
+      color: var(--muted); cursor: pointer; position: relative;
+    }
+    .sub-tab.active { color: var(--blue); font-weight: 600; }
+    .sub-tab.active::after {
+      content: ""; position: absolute; left: 20%; right: 20%; bottom: 0;
+      height: 2px; background: var(--blue); border-radius: 1px;
+    }
+    .order-list { flex: 1; overflow-y: auto; padding: 12px 16px; }
+    .order-card {
+      background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+    .order-card .top { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .order-card .id { font-size: 13px; font-weight: 600; }
+    .order-card .status { font-size: 12px; color: var(--blue); }
+    .order-card .status.fail { color: var(--danger); }
+    .order-card .meta { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .empty {
+      text-align: center; padding: 48px 24px; color: var(--muted); font-size: 14px;
+    }
+    .empty .icon { font-size: 48px; margin-bottom: 12px; opacity: .4; }
+
+    /* 弹层 */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100;
+      display: none; align-items: flex-end; justify-content: center;
+    }
+    .overlay.open { display: flex; }
+    .sheet {
+      width: 100%; max-width: var(--phone-w); max-height: 85vh;
+      background: #fff; border-radius: 16px 16px 0 0; overflow: hidden;
+      display: flex; flex-direction: column; animation: slideUp .25s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .sheet-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .sheet-head h3 { font-size: 16px; }
+    .sheet-close { border: none; background: none; font-size: 22px; cursor: pointer; color: var(--muted); }
+    .sheet-body { padding: 16px; overflow-y: auto; flex: 1; }
+    .pkg-card {
+      border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px;
+      cursor: pointer; transition: border-color .15s;
+    }
+    .pkg-card:hover, .pkg-card.selected { border-color: var(--blue); background: #f8faff; }
+    .pkg-card h4 { font-size: 15px; margin-bottom: 4px; }
+    .pkg-card .price { color: var(--danger); font-size: 18px; font-weight: 700; }
+    .pkg-card .desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .btn-block {
+      width: 100%; height: 44px; border-radius: 22px; border: none;
+      background: var(--blue); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    .btn-block:disabled { opacity: .45; cursor: not-allowed; }
+    .scan-box {
+      text-align: center; padding: 32px 16px;
+    }
+    .scan-frame {
+      width: 200px; height: 200px; margin: 0 auto 20px; border: 2px solid var(--blue);
+      border-radius: 12px; position: relative; overflow: hidden;
+      background: #000;
+    }
+    .scan-line {
+      position: absolute; left: 8px; right: 8px; height: 2px; background: var(--blue);
+      box-shadow: 0 0 8px var(--blue); animation: scan 2s linear infinite;
+    }
+    @keyframes scan { 0%,100% { top: 10%; } 50% { top: 85%; } }
+    .toast {
+      position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      background: rgba(0,0,0,.78); color: #fff; padding: 12px 20px; border-radius: 8px;
+      font-size: 14px; z-index: 200; display: none; max-width: 280px; text-align: center;
+    }
+    .toast.show { display: block; }
+    .result-ok { text-align: center; padding: 24px; }
+    .result-ok .big { font-size: 48px; margin-bottom: 12px; }
+    .form-row { margin-bottom: 14px; }
+    .form-row label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .form-row input {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px;
+    }
+    @media (max-width: 720px) {
+      .demo-panel { width: 100%; order: 2; }
+      .phone-wrap { width: 100%; max-width: var(--phone-w); height: 100vh; max-height: none; border-radius: 0; }
+      .workspace { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="workspace">
+    <aside class="demo-panel">
+      <h2>演示控制台</h2>
+      <p style="color:var(--muted);margin-bottom:10px">切换骑手身份，体验不同权益与拦截规则。</p>
+      <label>登录身份</label>
+      <select id="demoRole">
+        <option value="guest">未登录</option>
+        <option value="personal" selected>个人套餐 · 张骑手 U1028</option>
+        <option value="personal_cross3">个人跨网·案例3 · U1028</option>
+        <option value="channel">渠道人天 · 孙骑手 U2110（分配即开通·已预占）</option>
+        <option value="channel_fail">渠道预占失败 · 赵骑手 U2103（自费兜底）</option>
+        <option value="channel_cross3">渠道跨网·案例3 · 王骑手 U2088</option>
+        <option value="none">已登录 · 未开通服务</option>
+        <option value="frozen">个人套餐 · 已冻结</option>
+      </select>
+      <label>扫码站点</label>
+      <select id="demoSite">
+        <option value="ST-SH-01">浦东骑手驿站（主绑定站·本站）</option>
+        <option value="ST-SH-02">世博换电服务点（同运营商跨站）</option>
+        <option value="ST-SH-04">陆家嘴分站（跨运营商）</option>
+        <option value="ST-BJ-01">滨江换电站（案例3·U/C/B三方·跨网¥0.6）</option>
+      </select>
+      <label style="margin-top:10px">OP-SX 换电范围（演示开关）</label>
+      <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="policyCrossNet" checked /> 允许跨网换电</label>
+      <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="policyCrossSite" checked /> 允许跨站点换电</label>
+      <button type="button" class="primary" id="applyDemo">应用并重绘</button>
+      <p style="margin-top:14px"><a href="../index.html">← 返回运营商后台原型</a></p>
+      <p style="margin-top:6px"><a href="../docs/index.html">📄 产品文档（全部）</a></p>
+    </aside>
+
+    <div class="phone-wrap" id="phone">
+      <div class="status-bar">
+        <span id="clock">11:24</span>
+        <div class="status-icons">
+          <span>5G</span><span>▮▮▮</span><span>75%</span>
+          <div class="wx-capsule"><span>···</span><span>◎</span></div>
+        </div>
+      </div>
+      <div class="app-header" id="pageTitle">首页</div>
+      <div class="service-banner">客服电话 400-607-2666　服务时间 8:00-24:00</div>
+
+      <!-- 首页 -->
+      <div class="screen active" id="screen-home" data-title="首页">
+        <div class="map-area" id="mapArea">
+          <span class="map-label" style="left:18%;top:22%">博奥路</span>
+          <span class="map-label" style="left:55%;top:38%">机场公路</span>
+          <span class="map-label" style="left:30%;top:55%">闪送驿站</span>
+          <div class="map-pin" style="left:42%;top:48%" data-site="ST-SH-01" title="浦东骑手驿站"></div>
+          <div class="map-pin" style="left:52%;top:62%" data-site="ST-SH-02" title="世博换电服务点"></div>
+          <div class="map-pin" style="left:68%;top:35%" data-site="ST-SH-04" title="陆家嘴分站"></div>
+          <div class="map-pin" style="left:25%;top:70%" data-site="ST-BJ-01" title="滨江换电站"></div>
+          <span class="map-provider">腾讯地图 · 演示</span>
+          <div class="map-fab-row">
+            <button type="button" class="fab-circle" id="btnHelp" title="帮助">?</button>
+            <button type="button" class="fab-scan" id="btnScan">⊞ 扫一扫</button>
+            <button type="button" class="fab-circle" id="btnLocate" title="定位">⌖</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 订单 -->
+      <div class="screen" id="screen-orders" data-title="订单">
+        <div class="sub-tabs" id="orderTabs">
+          <button type="button" class="sub-tab active" data-otab="swap">换电订单</button>
+          <button type="button" class="sub-tab" data-otab="purchase">服务购买</button>
+          <button type="button" class="sub-tab" data-otab="return">退租订单</button>
+        </div>
+        <div class="order-list" id="orderList"></div>
+      </div>
+
+      <!-- 我的 -->
+      <div class="screen" id="screen-mine" data-title="我的">
+        <div class="mine-scroll" id="mineContent"></div>
+      </div>
+
+      <nav class="tab-bar">
+        <button type="button" class="tab-item active" data-tab="home"><span class="icon">⌂</span>首页</button>
+        <button type="button" class="tab-item" data-tab="orders"><span class="icon">☰</span>订单</button>
+        <button type="button" class="tab-item" data-tab="mine"><span class="icon">☺</span>我的</button>
+      </nav>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- 扫码换电 -->
+  <div class="overlay" id="overlayScan">
+    <div class="sheet">
+      <div class="sheet-head"><h3>扫码换电</h3><button type="button" class="sheet-close" data-close="overlayScan">×</button></div>
+      <div class="sheet-body" id="scanBody"></div>
+    </div>
+  </div>
+
+  <!-- 套餐购买 -->
+  <div class="overlay" id="overlayPkg">
+    <div class="sheet">
+      <div class="sheet-head"><h3>服务购买</h3><button type="button" class="sheet-close" data-close="overlayPkg">×</button></div>
+      <div class="sheet-body">
+        <div class="pkg-card selected" data-pkg="month">
+          <h4>包月30天 · 不限次</h4>
+          <div class="price">¥299</div>
+          <div class="desc">闪送驿站联营 · 浦东骑手驿站 · 含电池服务</div>
+        </div>
+        <div class="pkg-card" data-pkg="times">
+          <h4>次卡10次</h4>
+          <div class="price">¥89</div>
+          <div class="desc">按次计费，换电成功扣次</div>
+        </div>
+        <button type="button" class="btn-block" id="btnPayPkg" style="margin-top:8px">确认支付（Mock）</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 实名 -->
+  <div class="overlay" id="overlayKyc">
+    <div class="sheet">
+      <div class="sheet-head"><h3>实名认证</h3><button type="button" class="sheet-close" data-close="overlayKyc">×</button></div>
+      <div class="sheet-body">
+        <div class="form-row"><label>真实姓名</label><input type="text" id="kycName" placeholder="与身份证一致" /></div>
+        <div class="form-row"><label>身份证号</label><input type="text" id="kycId" placeholder="18位身份证号" maxlength="18" /></div>
+        <button type="button" class="btn-block" id="btnKycSubmit">提交认证</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置 -->
+  <div class="overlay" id="overlaySettings">
+    <div class="sheet">
+      <div class="sheet-head"><h3>设置</h3><button type="button" class="sheet-close" data-close="overlaySettings">×</button></div>
+      <div class="sheet-body">
+        <div class="form-row"><label>消息通知</label><input type="checkbox" checked /> 换电结果通知</div>
+        <div class="form-row"><label>演示身份</label>
+          <select id="settingsRole" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border)">
+            <option value="guest">未登录</option>
+            <option value="personal">个人套餐</option>
+            <option value="personal_cross3">个人跨网·案例3</option>
+            <option value="channel">渠道人天</option>
+            <option value="channel_fail">渠道预占失败·U2103</option>
+            <option value="channel_cross3">渠道跨网·案例3</option>
+            <option value="none">未开通</option>
+            <option value="frozen">已冻结 · U1041</option>
+          </select>
+        </div>
+        <button type="button" class="btn-block" id="btnLogout" style="margin-top:16px;background:#f0f2f5;color:var(--text)">退出登录</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SITES = {
+      "ST-SH-01": { id: "ST-SH-01", name: "浦东骑手驿站", operator: "OP-SX", signed: true },
+      "ST-SH-02": { id: "ST-SH-02", name: "世博换电服务点", operator: "OP-SX", signed: true },
+      "ST-SH-04": { id: "ST-SH-04", name: "陆家嘴分站", operator: "OP-LJZ", signed: true },
+      "ST-BJ-01": { id: "ST-BJ-01", name: "滨江换电站", operator: "OP-BJ", batteryOperator: "OP-LJZ", signed: false }
+    };
+
+    const OPERATOR_POLICY = {
+      "OP-SX": { crossNetworkEnabled: true, crossSiteEnabled: true },
+      "OP-LJZ": { crossNetworkEnabled: true, crossSiteEnabled: true },
+      "OP-BJ": { crossNetworkEnabled: true, crossSiteEnabled: true }
+    };
+
+    const OPERATOR_CREDIT = {
+      "OP-SX": { crossSwapEnabled: true },
+      "OP-LJZ": { crossSwapEnabled: true },
+      "OP-BJ": { crossSwapEnabled: false }
+    };
+
+    const USERS = {
+      guest: { loggedIn: false },
+      personal: {
+        loggedIn: true, phone: "138****1028", name: "张骑手", userId: "U1028",
+        kyc: false, entitlement: "个人套餐", pkg: "包月30天", daysLeft: 18, swapUsed: 42,
+        status: "服务中", operator: "OP-SX", homeSite: "ST-SH-01", channel: null, holdsBattery: true
+      },
+      personal_cross3: {
+        loggedIn: true, phone: "138****1028", name: "张骑手", userId: "U1028",
+        kyc: true, entitlement: "个人套餐", pkg: "包月30天", daysLeft: 18, swapUsed: 42,
+        status: "服务中", operator: "OP-SX", homeSite: "ST-SH-01", channel: null,
+        demoCase3: true, holdsBattery: true
+      },
+      channel: {
+        loggedIn: true, phone: "136****2110", name: "孙骑手", userId: "U2110",
+        kyc: true, entitlement: "渠道人天", pkg: "人天额度", remainingDays: 13, swapUsed: 0,
+        status: "服务中", todayEligibility: "已预占", operator: "OP-SX", homeSite: "ST-SH-02",
+        channel: "顺丰同城渠道", team: "世博车队", poolId: "QP-2601", holdsBattery: false
+      },
+      channel_fail: {
+        loggedIn: true, phone: "137****2103", name: "赵骑手", userId: "U2103",
+        kyc: true, entitlement: "渠道人天", pkg: "人天额度", daysLeft: null, swapUsed: 0,
+        status: "权益不可用", operator: "OP-SX", homeSite: "ST-SH-01", channel: "顺丰同城渠道", poolId: "QP-2601",
+        preOccupyFail: true, failReason: "渠道额度池余额不足，今日预占失败", holdsBattery: false
+      },
+      channel_cross3: {
+        loggedIn: true, phone: "137****2088", name: "王骑手", userId: "U2088",
+        kyc: true, entitlement: "渠道人天", pkg: "人天额度", daysLeft: null, swapUsed: 2,
+        status: "服务中", operator: "OP-SX", homeSite: "ST-SH-01", channel: "顺丰同城渠道", poolId: "QP-2601", demoCase3: true, holdsBattery: true
+      },
+      none: {
+        loggedIn: true, phone: "188****1850", name: "新用户", userId: "U0001",
+        kyc: false, entitlement: null, status: "未开通"
+      },
+      frozen: {
+        loggedIn: true, phone: "139****1041", name: "赵骑手", userId: "U1041",
+        kyc: true, entitlement: "个人套餐", pkg: "包月30天", daysLeft: 21, swapUsed: 28,
+        status: "已冻结", operator: "OP-SX", homeSite: "ST-SH-01", holdsBattery: false
+      }
+    };
+
+    let state = {
+      role: "personal",
+      scanSite: "ST-SH-01",
+      orderTab: "swap",
+      swapOrders: [
+        { id: "SW2605241201", site: "浦东骑手驿站", time: "2026-05-24 12:05", status: "成功", type: "个人套餐", userId: "U1028" },
+        { id: "SW2605241188", site: "浦东骑手驿站", time: "2026-05-24 08:30", status: "成功", type: "个人套餐", userId: "U1028" }
+      ],
+      purchaseOrders: [
+        { id: "SUB260524001", pkg: "包月30天", amount: 299, time: "2026-05-01 09:12", status: "已支付", userId: "U1028" }
+      ],
+      returnOrders: []
+    };
+
+    function user() { return USERS[state.role] || USERS.guest; }
+
+    function toast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 2200);
+    }
+
+    function openOverlay(id) { document.getElementById(id).classList.add("open"); }
+    function closeOverlay(id) { document.getElementById(id).classList.remove("open"); }
+
+    function switchTab(tab) {
+      document.querySelectorAll(".tab-item").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+      document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === "screen-" + tab));
+      const scr = document.getElementById("screen-" + tab);
+      document.getElementById("pageTitle").textContent = scr.dataset.title;
+      if (tab === "orders") renderOrders();
+      if (tab === "mine") renderMine();
+    }
+
+    function renderMine() {
+      const u = user();
+      const el = document.getElementById("mineContent");
+      if (!u.loggedIn) {
+        el.innerHTML = `
+          <div class="login-hero">
+            <div class="logo">智</div>
+            <h1>智格换电</h1>
+            <p>安全出行 放心骑行</p>
+            <button type="button" class="btn-login" id="btnLogin">一键登录</button>
+            <div class="agree-row">
+              <input type="checkbox" id="agreeChk" checked />
+              <label for="agreeChk">同意<a href="#">《隐私政策》</a>、<a href="#">《数字证书使用协议》</a>和<a href="#">《智格换电服务协议》</a></label>
+            </div>
+          </div>`;
+        document.getElementById("btnLogin").onclick = () => {
+          if (!document.getElementById("agreeChk").checked) { toast("请先同意服务协议"); return; }
+          state.role = "none";
+          document.getElementById("demoRole").value = "none";
+          renderMine();
+          toast("登录成功");
+        };
+        return;
+      }
+
+      let card = "";
+      if (u.status === "未开通") {
+        card = `<div class="service-card"><div><h3>暂未开通服务</h3><p>开通服务，放心骑行。</p></div><button type="button" class="btn-gold" data-action="buy">服务购买</button></div>`;
+      } else if (u.status === "已冻结") {
+        card = `<div class="service-card warn"><div><h3>服务已冻结</h3><p>${u.pkg} · 剩余 ${u.daysLeft} 天 · 解冻后可换电 · 未持有电池</p></div><button type="button" class="btn-gold" data-action="unfreeze">申请解冻</button></div>`;
+      } else if (u.preOccupyFail || u.status === "权益不可用") {
+        card = `<div class="service-card warn"><div><h3>渠道人天 · 今日不可用</h3><p>${u.channel}<br>${u.failReason || "预占失败"}</p><p style="font-size:11px;margin-top:6px;color:#7a6520">可在线自费购买 1天/单次 兜底套餐换电（不扣渠道池）</p></div><button type="button" class="btn-gold" data-action="fallback">自费换电</button></div>`;
+      } else if (u.entitlement === "渠道人天") {
+        const quotaLine = u.remainingDays != null ? `剩余 ${u.remainingDays} 人天 · ` : "";
+        const todayLine = u.todayEligibility === "已预占" ? "今日已预占（分配即开通）"
+          : u.todayEligibility === "已确认消耗" || u.swapUsed > 0 ? `今日已确认消耗 · 换电 ${u.swapUsed} 次`
+          : "今日资格待确认";
+        card = `<div class="service-card channel"><div><h3>渠道人天额度</h3><p>${u.channel}${u.team ? " · " + u.team : ""}<br>${quotaLine}${todayLine}</p><p style="font-size:11px;margin-top:4px;opacity:.85">可在全网换电 · 额度售卖方 OP-SX</p></div></div>`;
+      } else {
+        const batHint = u.holdsBattery ? " · 持有电池" : "";
+        card = `<div class="service-card"><div><h3>${u.pkg}</h3><p>剩余 ${u.daysLeft} 天 · 已换电 ${u.swapUsed} 次 · 服务中${batHint}</p></div><button type="button" class="btn-gold" data-action="buy">续费</button></div>`;
+      }
+
+      el.innerHTML = `
+        <div class="profile-head">
+          <div class="avatar">👤</div>
+          <div><span class="phone">${u.phone}</span><span class="tag-sm ${u.kyc ? "ok" : ""}">${u.kyc ? "已认证" : "未认证"}</span></div>
+          <button type="button" class="settings-btn" id="btnSettings">⚙</button>
+        </div>
+        ${card}
+        <div class="section-card">
+          <div class="section-title">常用功能</div>
+          <div class="grid-4">
+            <button type="button" class="grid-item" data-action="scan"><span class="gi">⊞</span>扫码换电</button>
+            <button type="button" class="grid-item" data-action="buy"><span class="gi">🛒</span>购买套餐</button>
+            <button type="button" class="grid-item" data-action="coupon"><span class="gi orange">🎫</span>我的优惠券</button>
+            <button type="button" class="grid-item" data-action="service"><span class="gi">📞</span>客服电话</button>
+            <button type="button" class="grid-item" data-action="return"><span class="gi">🔋</span>电池退还</button>
+            <button type="button" class="grid-item" data-action="freeze"><span class="gi">❄</span>申请冻结</button>
+            <button type="button" class="grid-item" data-action="kyc"><span class="gi">✓</span>实名认证</button>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-title">我的订单</div>
+          <div class="grid-2">
+            <button type="button" class="grid-item" data-goto-orders="return"><span class="gi">📋</span>退租订单</button>
+            <button type="button" class="grid-item" data-goto-orders="purchase"><span class="gi">📋</span>服务购买订单</button>
+          </div>
+        </div>`;
+
+      el.querySelector("#btnSettings").onclick = () => {
+        document.getElementById("settingsRole").value = state.role;
+        openOverlay("overlaySettings");
+      };
+      el.querySelectorAll("[data-action]").forEach(btn => {
+        btn.onclick = () => handleAction(btn.dataset.action);
+      });
+      el.querySelectorAll("[data-goto-orders]").forEach(btn => {
+        btn.onclick = () => { state.orderTab = btn.dataset.gotoOrders; switchTab("orders"); };
+      });
+    }
+
+    function handleAction(action) {
+      const u = user();
+      if (action === "scan") { startScan(); return; }
+      if (action === "fallback") { startScan(); return; }
+      if (action === "buy") { openOverlay("overlayPkg"); return; }
+      if (action === "coupon") { toast("暂无可用优惠券"); return; }
+      if (action === "service") { toast("客服 400-607-2666"); return; }
+      if (action === "return") {
+        if (!u.loggedIn || u.status === "未开通") { toast("请先开通服务"); return; }
+        if (!u.holdsBattery) { toast("当前未持有电池"); return; }
+        toast("电池已归还，可继续申请退押或冻结");
+        if (u.holdsBattery) u.holdsBattery = false;
+        renderMine();
+        return;
+      }
+      if (action === "freeze") {
+        if (!u.loggedIn || u.status === "未开通") { toast("请先开通服务"); return; }
+        if (u.status === "已冻结") { toast("服务已冻结"); return; }
+        if (u.preOccupyFail || u.status === "权益不可用") { toast("今日渠道额度不可用"); return; }
+        if (u.holdsBattery) { toast("请先归还电池后再申请冻结"); return; }
+        toast("已提交冻结申请，审核通过后生效");
+        return;
+      }
+      if (action === "kyc") { openOverlay("overlayKyc"); return; }
+      if (action === "unfreeze") { toast("已提交解冻申请，请等待审核"); return; }
+    }
+
+    function renderOrders() {
+      document.querySelectorAll(".sub-tab").forEach(t => t.classList.toggle("active", t.dataset.otab === state.orderTab));
+      const u = user();
+      const list = document.getElementById("orderList");
+      let rows = [];
+      if (state.orderTab === "swap") {
+        rows = state.swapOrders.filter(o => !u.userId || o.userId === u.userId);
+        if (!rows.length) {
+          list.innerHTML = `<div class="empty"><div class="icon">🔋</div>暂无换电记录</div>`;
+          return;
+        }
+        list.innerHTML = rows.map(o => `
+          <div class="order-card">
+            <div class="top"><span class="id">${o.id}</span><span class="status ${o.status === "失败" ? "fail" : ""}">${o.status}</span></div>
+            <div class="meta">${o.site}<br>${o.time}<br>权益：${o.type}</div>
+          </div>`).join("");
+      } else if (state.orderTab === "purchase") {
+        rows = state.purchaseOrders.filter(o => !u.userId || o.userId === u.userId);
+        if (!rows.length) {
+          list.innerHTML = `<div class="empty"><div class="icon">🛒</div>暂无购买记录</div>`;
+          return;
+        }
+        list.innerHTML = rows.map(o => `
+          <div class="order-card">
+            <div class="top"><span class="id">${o.id}</span><span class="status">${o.status}</span></div>
+            <div class="meta">${o.pkg} · ¥${o.amount}<br>${o.time}</div>
+          </div>`).join("");
+      } else {
+        if (!state.returnOrders.length) {
+          list.innerHTML = `<div class="empty"><div class="icon">📋</div>暂无退租记录</div>`;
+          return;
+        }
+      }
+    }
+
+    function startScan() {
+      const u = user();
+      if (!u.loggedIn) { toast("请先登录"); switchTab("mine"); return; }
+      if (u.status === "未开通") { toast("请先购买服务"); openOverlay("overlayPkg"); return; }
+      if (u.status === "已冻结") { toast("服务已冻结，无法换电"); return; }
+      const site = SITES[state.scanSite];
+      const body = document.getElementById("scanBody");
+      body.innerHTML = `
+        <div class="scan-box">
+          <div class="scan-frame"><div class="scan-line"></div></div>
+          <p style="color:var(--muted);font-size:13px">对准换电柜二维码</p>
+          <p style="font-size:12px;margin-top:8px;color:var(--blue)">当前柜机：${site.name}</p>
+          <button type="button" class="btn-block" style="margin-top:20px" id="btnSimScan">模拟扫描成功</button>
+        </div>`;
+      body.querySelector("#btnSimScan").onclick = () => runSwap(site);
+      openOverlay("overlayScan");
+    }
+
+    function opPolicy(opId) {
+      return OPERATOR_POLICY[opId] || { crossNetworkEnabled: true, crossSiteEnabled: true };
+    }
+
+    function checkSwapGate(u, site) {
+      const userOp = u.operator;
+      const cabinetOp = site.operator;
+      const isCrossNetwork = userOp && cabinetOp && userOp !== cabinetOp;
+      const isCrossSite = userOp && cabinetOp && userOp === cabinetOp
+        && u.homeSite && site.id !== u.homeSite;
+
+      if (isCrossNetwork) {
+        const userPol = opPolicy(userOp);
+        const cabPol = opPolicy(cabinetOp);
+        const userCredit = OPERATOR_CREDIT[userOp];
+        if (userCredit && userCredit.crossSwapEnabled === false) {
+          return { ok: false, msg: "您的运营商信用额度不足，跨网换电已关闭" };
+        }
+        if (!userPol.crossNetworkEnabled) {
+          return { ok: false, msg: "您的运营商已关闭跨网换电，仅可在本运营商站点换电" };
+        }
+        if (!cabPol.crossNetworkEnabled) {
+          return { ok: false, msg: "该站点运营商已关闭跨网换电，外来用户不可换电" };
+        }
+      }
+
+      if (isCrossSite) {
+        const userPol = opPolicy(userOp);
+        if (!userPol.crossSiteEnabled) {
+          const home = SITES[u.homeSite];
+          return { ok: false, msg: `运营商已关闭跨站点换电，请前往主绑定站点「${home ? home.name : ""}」` };
+        }
+      }
+
+      return { ok: true };
+    }
+
+    function runSwap(site) {
+      const u = user();
+      if (u.preOccupyFail) {
+        showPreOccupyFailResult(site, u.failReason || "渠道人天今日不可用");
+        return;
+      }
+      const gate = checkSwapGate(u, site);
+      if (!gate.ok) {
+        showScanResult(false, gate.msg, site);
+        return;
+      }
+      const userOp = u.operator || "OP-SX";
+      const cabOp = site.operator;
+      const batOp = site.batteryOperator || site.operator;
+      const cabFee = userOp !== cabOp ? 0.5 : 0;
+      const batFee = userOp !== batOp ? 0.1 : 0;
+      const id = "SW" + Date.now().toString().slice(-8);
+      state.swapOrders.unshift({
+        id, site: site.name, time: new Date().toLocaleString("zh-CN"), status: "成功",
+        type: u.entitlement || "个人套餐", userId: u.userId,
+        userOwner: userOp, cabinetOwner: cabOp, batteryOwner: batOp, l1Fee: cabFee + batFee
+      });
+      if (u.entitlement === "渠道人天") u.swapUsed = (u.swapUsed || 0) + 1;
+      else u.swapUsed = (u.swapUsed || 0) + 1;
+      showScanResult(true, "换电成功", site, id, { userOp, cabOp, batOp, l1Fee: cabFee + batFee });
+    }
+
+    function payFallbackAndSwap(site, sku) {
+      const u = user();
+      const pkgMap = { day1: { pkg: "1天套餐", amount: 29 }, single: { pkg: "单次换电", amount: 9.9 } };
+      const sel = pkgMap[sku] || pkgMap.day1;
+      const payId = "PAY-POOL-" + Date.now().toString().slice(-6);
+      state.purchaseOrders.unshift({
+        id: payId, pkg: sel.pkg + "·渠道兜底", amount: sel.amount,
+        time: new Date().toLocaleString("zh-CN"), status: "已支付", userId: u.userId
+      });
+      u.fallbackPaid = true;
+      u.fallbackSku = sel.pkg;
+      const gate = checkSwapGate(u, site);
+      if (!gate.ok) {
+        showScanResult(false, gate.msg, site);
+        return;
+      }
+      const userOp = u.operator || "OP-SX";
+      const cabOp = site.operator;
+      const batOp = site.batteryOperator || site.operator;
+      const cabFee = userOp !== cabOp ? 0.5 : 0;
+      const batFee = userOp !== batOp ? 0.1 : 0;
+      const id = "SW" + Date.now().toString().slice(-8);
+      state.swapOrders.unshift({
+        id, site: site.name, time: new Date().toLocaleString("zh-CN"), status: "成功",
+        type: "渠道兜底自费", userId: u.userId,
+        userOwner: userOp, cabinetOwner: cabOp, batteryOwner: batOp, l1Fee: cabFee + batFee
+      });
+      u.swapUsed = (u.swapUsed || 0) + 1;
+      showScanResult(true, "换电成功（自费兜底）", site, id, { userOp, cabOp, batOp, l1Fee: cabFee + batFee });
+    }
+
+    function showPreOccupyFailResult(site, reason) {
+      document.getElementById("scanBody").innerHTML = `
+        <div class="result-ok">
+          <div class="big" style="color:var(--danger)">!</div>
+          <h3 style="margin-bottom:8px">渠道人天不可用</h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">${reason}<br><small>今日未预占成功，无法消耗渠道额度池</small></p>
+          <p style="font-size:12px;color:var(--blue);margin-bottom:12px">可选运营商兜底 SKU（购后 24h 有效，不参与合伙人分润）：</p>
+          <button type="button" class="btn-block" data-fallback="day1" style="margin-bottom:8px">1天套餐 · ¥29</button>
+          <button type="button" class="btn-block" data-fallback="single" style="margin-bottom:8px;background:#fff;color:var(--blue);border:1px solid var(--blue)">单次换电 · ¥9.9</button>
+          <button type="button" class="btn-block" style="margin-top:8px;background:var(--bg);color:var(--muted)" data-close-scan>取消</button>
+        </div>`;
+      document.getElementById("scanBody").querySelectorAll("[data-fallback]").forEach(btn => {
+        btn.onclick = () => payFallbackAndSwap(site, btn.dataset.fallback);
+      });
+      document.getElementById("scanBody").querySelector("[data-close-scan]").onclick = () => closeOverlay("overlayScan");
+    }
+
+    function showScanResult(ok, msg, site, swapId, triplet) {
+      const l1Line = triplet && triplet.l1Fee > 0
+        ? `<br>跨网设备服务费 ¥${triplet.l1Fee.toFixed(2)}（U→C/B 平台代付）`
+        : triplet ? `<br>跨网设备服务费：无（运营商归属相同）` : "";
+      const tripletLine = triplet
+        ? `<br><small>用户运营商 ${triplet.userOp} · 柜机 ${triplet.cabOp} · 电池 ${triplet.batOp}</small>`
+        : "";
+      document.getElementById("scanBody").innerHTML = ok ? `
+        <div class="result-ok">
+          <div class="big">✓</div>
+          <h3 style="margin-bottom:8px">${msg}</h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.7">
+            单号 ${swapId}<br>${site.name}<br>换出电池 SOC 96% · 健康正常${tripletLine}${l1Line}
+          </p>
+          <button type="button" class="btn-block" style="margin-top:20px" data-close-scan>完成</button>
+        </div>` : `
+        <div class="result-ok">
+          <div class="big" style="color:var(--danger)">✕</div>
+          <h3 style="margin-bottom:8px">换电失败</h3>
+          <p style="font-size:13px;color:var(--muted)">${msg}</p>
+          <button type="button" class="btn-block" style="margin-top:20px" data-close-scan>知道了</button>
+        </div>`;
+      document.getElementById("scanBody").querySelector("[data-close-scan]").onclick = () => closeOverlay("overlayScan");
+    }
+
+    document.querySelectorAll(".tab-item").forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+    document.getElementById("btnScan").onclick = startScan;
+    document.getElementById("btnHelp").onclick = () => toast("帮助中心建设中");
+    document.getElementById("btnLocate").onclick = () => toast("已定位到当前位置");
+    document.querySelectorAll(".map-pin").forEach(p => {
+      p.onclick = () => { state.scanSite = p.dataset.site; document.getElementById("demoSite").value = state.scanSite; toast("已选站点：" + SITES[state.scanSite].name); };
+    });
+
+    document.querySelectorAll(".sub-tab").forEach(t => {
+      t.onclick = () => { state.orderTab = t.dataset.otab; renderOrders(); };
+    });
+
+    document.querySelectorAll("[data-close]").forEach(b => {
+      b.onclick = () => closeOverlay(b.dataset.close);
+    });
+    document.querySelectorAll(".overlay").forEach(ov => {
+      ov.onclick = e => { if (e.target === ov) ov.classList.remove("open"); };
+    });
+
+    document.getElementById("btnPayPkg").onclick = () => {
+      const u = user();
+      if (!u.loggedIn) { toast("请先登录"); return; }
+      const id = "SUB" + Date.now().toString().slice(-8);
+      state.purchaseOrders.unshift({ id, pkg: "包月30天", amount: 299, time: new Date().toLocaleString("zh-CN"), status: "已支付", userId: u.userId });
+      u.status = "服务中";
+      u.entitlement = "个人套餐";
+      u.pkg = "包月30天";
+      u.daysLeft = 30;
+      u.swapUsed = 0;
+      closeOverlay("overlayPkg");
+      toast("支付成功，服务已开通");
+      renderMine();
+    };
+
+    document.getElementById("btnKycSubmit").onclick = () => {
+      const name = document.getElementById("kycName").value.trim();
+      const id = document.getElementById("kycId").value.trim();
+      if (!name || id.length < 15) { toast("请填写正确的身份信息"); return; }
+      user().kyc = true;
+      closeOverlay("overlayKyc");
+      toast("实名认证成功");
+      renderMine();
+    };
+
+    document.getElementById("btnLogout").onclick = () => {
+      state.role = "guest";
+      document.getElementById("demoRole").value = "guest";
+      closeOverlay("overlaySettings");
+      renderMine();
+      toast("已退出登录");
+    };
+    document.getElementById("settingsRole").onchange = function() {
+      state.role = this.value;
+      document.getElementById("demoRole").value = this.value;
+      closeOverlay("overlaySettings");
+      renderMine();
+      renderOrders();
+    };
+
+    document.getElementById("applyDemo").onclick = () => {
+      state.role = document.getElementById("demoRole").value;
+      state.scanSite = state.role === "personal_cross3" ? "ST-BJ-01" : document.getElementById("demoSite").value;
+      if (state.role === "personal_cross3") document.getElementById("demoSite").value = "ST-BJ-01";
+      OPERATOR_POLICY["OP-SX"].crossNetworkEnabled = document.getElementById("policyCrossNet").checked;
+      OPERATOR_POLICY["OP-SX"].crossSiteEnabled = document.getElementById("policyCrossSite").checked;
+      renderMine();
+      renderOrders();
+      toast("已切换演示身份与换电策略");
+    };
+
+    document.querySelectorAll(".pkg-card").forEach(c => {
+      c.onclick = () => {
+        document.querySelectorAll(".pkg-card").forEach(x => x.classList.remove("selected"));
+        c.classList.add("selected");
+      };
+    });
+
+    switchTab("home");
+    renderMine();
+  </script>
+</body>
+</html>

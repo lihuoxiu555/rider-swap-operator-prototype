@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>产品文档 · 骑手换电</title>
+  <style>
+    :root {
+      --bg: #f4f7fb; --surface: #fff; --ink: #17212b; --muted: #657383;
+      --line: #dce5ee; --brand: #0d9488; --brand-dark: #0f766e; --brand-soft: #ecfdf5;
+      --radius: 8px; --shadow: 0 10px 30px rgba(22, 33, 43, .08);
+      --sidebar-w: 260px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; color: var(--ink); background: var(--bg); }
+    a { color: var(--brand-dark); }
+    .layout { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
+    .sidebar {
+      background: #1a2332; color: #e8eef4; padding: 18px 14px; overflow-y: auto;
+      position: sticky; top: 0; height: 100vh;
+    }
+    .sidebar h1 { margin: 0; font-size: 16px; }
+    .sidebar .sub { font-size: 12px; color: #9aa8b8; margin: 6px 0 16px; line-height: 1.5; }
+    .nav-links { display: grid; gap: 6px; margin-bottom: 18px; }
+    .nav-links a {
+      display: block; padding: 8px 10px; border-radius: var(--radius); font-size: 13px;
+      color: #c5d0dc; text-decoration: none; background: rgba(255,255,255,.04);
+    }
+    .nav-links a:hover { background: rgba(13, 148, 136, .2); color: #fff; }
+    .doc-group { margin-bottom: 14px; }
+    .doc-group h2 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #7b8a9a; }
+    .doc-list { display: grid; gap: 4px; }
+    .doc-list button {
+      border: none; background: transparent; color: #dce5ee; text-align: left;
+      padding: 8px 10px; border-radius: var(--radius); font-size: 13px; cursor: pointer; width: 100%;
+    }
+    .doc-list button:hover { background: rgba(255,255,255,.06); }
+    .doc-list button.active { background: rgba(13, 148, 136, .28); color: #fff; font-weight: 600; }
+    .main { min-width: 0; padding: 20px 28px 40px; }
+    .toolbar {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 16px; font-size: 13px; color: var(--muted);
+    }
+    .toolbar .file { font-weight: 600; color: var(--ink); }
+    .article {
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 28px 32px 36px; max-width: 920px;
+    }
+    .article .loading, .article .error { color: var(--muted); font-size: 14px; }
+    .md h1 { font-size: 26px; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+    .md h2 { font-size: 20px; margin: 28px 0 12px; }
+    .md h3 { font-size: 16px; margin: 22px 0 10px; }
+    .md p, .md li { font-size: 14px; line-height: 1.75; }
+    .md ul, .md ol { padding-left: 1.4em; }
+    .md table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+    .md th, .md td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; }
+    .md th { background: var(--brand-soft); }
+    .md code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+    .md pre { background: #1e293b; color: #e2e8f0; padding: 14px; border-radius: var(--radius); overflow-x: auto; font-size: 12px; line-height: 1.6; }
+    .md pre code { background: none; padding: 0; color: inherit; }
+    .md blockquote { margin: 12px 0; padding: 10px 14px; border-left: 4px solid var(--brand); background: var(--brand-soft); color: var(--muted); }
+    .md hr { border: none; border-top: 1px solid var(--line); margin: 24px 0; }
+    .md .mermaid-wrap {
+      margin: 18px 0; padding: 20px 16px; background: #fafbfc;
+      border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto;
+    }
+    .md .mermaid-wrap .mermaid { display: flex; justify-content: center; min-height: 40px; }
+    .md .mermaid-wrap svg { max-width: 100%; height: auto; }
+    .md .mermaid-error {
+      font-size: 12px; color: #c84545; padding: 10px 12px; background: #fff5f5;
+      border-radius: 6px; margin-top: 8px;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <h1>产品文档</h1>
+      <p class="sub">PRD · 业务规则 · 流程图 · 验收标准<br>与原型同步维护</p>
+      <div class="nav-links">
+        <a href="../index.html">← 运营商后台原型</a>
+        <a href="../mobile/index.html">← 骑手端原型</a>
+      </div>
+      <div id="docNav"></div>
+    </aside>
+    <main class="main">
+      <div class="toolbar">
+        <span class="file" id="currentFile">—</span>
+        <span id="loadStatus"></span>
+      </div>
+      <article class="article">
+        <div id="content" class="md loading">加载中…</div>
+      </article>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    const DOC_GROUPS = [
+      {
+        title: "产品需求",
+        items: [
+          { file: "PRD.md", label: "后台 PRD" },
+          { file: "骑手端PRD.md", label: "骑手端 PRD" },
+          { file: "user-stories.md", label: "用户故事" },
+          { file: "acceptance-criteria.md", label: "验收标准" },
+          { file: "设计评审报告.md", label: "设计评审报告" }
+        ]
+      },
+      {
+        title: "业务与结算",
+        items: [
+          { file: "换电场景与运营商结算.md", label: "换电场景与运营商结算" },
+          { file: "合作模式与分账.md", label: "合作模式与分账" },
+          { file: "合伙人站点分佣.md", label: "合伙人站点分佣" },
+          { file: "换电范围策略.md", label: "换电范围策略" },
+          { file: "天数池.md", label: "人天额度池" },
+          { file: "权益准入API.md", label: "权益准入 API" },
+          { file: "额度池PRD差异清单.md", label: "额度池 PRD 差异清单" },
+          { file: "个人套餐定价与退款.md", label: "个人套餐定价与退款" }
+        ]
+      },
+      {
+        title: "结构与清单",
+        items: [
+          { file: "功能结构与业务流程.md", label: "功能结构与业务流程" },
+          { file: "角色与功能清单.md", label: "角色与功能清单" }
+        ]
+      }
+    ];
+
+    /** 与文档浏览器同目录下的 md/ 文件夹，不依赖服务根路径 */
+    function docFileUrl(file) {
+      const parts = file.split("/").map(encodeURIComponent);
+      return new URL("md/" + parts.join("/"), location.href).href;
+    }
+
+    function allDocs() {
+      return DOC_GROUPS.flatMap(g => g.items);
+    }
+
+    function prepareMermaidBlocks(root) {
+      root.querySelectorAll("pre code.language-mermaid").forEach(code => {
+        const pre = code.parentElement;
+        const wrap = document.createElement("div");
+        wrap.className = "mermaid-wrap";
+        const diagram = document.createElement("div");
+        diagram.className = "mermaid";
+        diagram.textContent = code.textContent.trim();
+        wrap.appendChild(diagram);
+        pre.replaceWith(wrap);
+      });
+    }
+
+    let mermaidReady = false;
+    async function renderMermaidDiagrams(root) {
+      const nodes = root.querySelectorAll(".mermaid");
+      if (!nodes.length || typeof mermaid === "undefined") return;
+      if (!mermaidReady) {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "base",
+          themeVariables: {
+            primaryColor: "#ecfdf5",
+            primaryTextColor: "#17212b",
+            primaryBorderColor: "#0d9488",
+            lineColor: "#5b6b7a",
+            secondaryColor: "#f0fdfa",
+            tertiaryColor: "#f8fafc",
+            fontFamily: '"Microsoft YaHei", "PingFang SC", Arial, sans-serif'
+          },
+          flowchart: { useMaxWidth: true, htmlLabels: true, curve: "basis" },
+          sequence: { useMaxWidth: true, wrap: true },
+          securityLevel: "loose"
+        });
+        mermaidReady = true;
+      }
+      try {
+        await mermaid.run({ nodes: Array.from(nodes), suppressErrors: true });
+      } catch (err) {
+        nodes.forEach(node => {
+          if (node.querySelector("svg")) return;
+          const errDiv = document.createElement("div");
+          errDiv.className = "mermaid-error";
+          errDiv.textContent = "流程图渲染失败，请检查 Mermaid 语法。";
+          node.closest(".mermaid-wrap")?.appendChild(errDiv);
+        });
+        console.error("mermaid", err);
+      }
+    }
+
+    function renderNav(activeFile) {
+      const nav = document.getElementById("docNav");
+      nav.innerHTML = DOC_GROUPS.map(g => `
+        <div class="doc-group">
+          <h2>${g.title}</h2>
+          <div class="doc-list">
+            ${g.items.map(it => `
+              <button type="button" class="${it.file === activeFile ? "active" : ""}" data-doc="${it.file}">${it.label}</button>
+            `).join("")}
+          </div>
+        </div>`).join("");
+      nav.querySelectorAll("[data-doc]").forEach(btn => {
+        btn.onclick = () => loadDoc(btn.dataset.doc, true);
+      });
+    }
+
+    async function loadDoc(file, pushHash) {
+      const content = document.getElementById("content");
+      const status = document.getElementById("loadStatus");
+      const label = allDocs().find(d => d.file === file)?.label || file;
+      document.getElementById("currentFile").textContent = label;
+      content.className = "md loading";
+      content.textContent = "加载中…";
+      status.textContent = "";
+      renderNav(file);
+      if (pushHash) location.hash = file;
+
+      try {
+        const url = docFileUrl(file);
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("HTTP " + res.status + " · " + url);
+        const md = await res.text();
+        if (md.trim().startsWith("<!") || md.includes("<html")) {
+          throw new Error("返回了 HTML 而非 Markdown，请打开 /prototype/docs/index.html");
+        }
+        content.className = "md";
+        content.innerHTML = marked.parse(md, { gfm: true, breaks: false });
+        prepareMermaidBlocks(content);
+        await renderMermaidDiagrams(content);
+        status.textContent = file;
+      } catch (e) {
+        content.className = "md error";
+        content.innerHTML = `<p>无法加载 <code>${file}</code>（${e.message}）。</p>
+          <p>请打开 <a href="index.html">/prototype/docs/index.html</a>，并执行 <code>python3 main.py</code> 重启服务。</p>`;
+      }
+    }
+
+    const initial = location.hash.replace("#", "") || "PRD.md";
+    const valid = allDocs().some(d => d.file === initial) ? initial : "PRD.md";
+    loadDoc(valid, false);
+    window.addEventListener("hashchange", () => {
+      const f = location.hash.replace("#", "");
+      if (f && allDocs().some(d => d.file === f)) loadDoc(f, false);
+    });
+  </script>
+</body>
+</html>

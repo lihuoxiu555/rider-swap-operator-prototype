@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 将 prototype/index.html 同步到 docs/index.html（GitHub Pages 入口），可选提交并推送。
+# 将 prototype 同步到 docs/（GitHub Pages 站点根），可选提交并推送。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -7,13 +7,19 @@ SRC="$ROOT/prototype/index.html"
 DST="$ROOT/docs/index.html"
 DOC_VIEWER_SRC="$ROOT/prototype/docs/index.html"
 DOC_VIEWER_DST="$ROOT/docs/documentation/index.html"
+MOBILE_SRC="$ROOT/prototype/mobile"
+MOBILE_DST="$ROOT/docs/mobile"
 PAGES_URL="https://lihuoxiu555.github.io/rider-swap-operator-prototype/"
 
 usage() {
   cat <<EOF
 用法: $(basename "$0") [选项]
 
-  把 prototype/index.html 复制到 docs/index.html，供 GitHub Pages 使用。
+  同步 prototype → docs/，供 GitHub Pages 使用：
+    · prototype/index.html        → docs/index.html
+    · prototype/docs/index.html   → docs/documentation/index.html
+    · docs/*.md                   → prototype/docs/md → docs/documentation/md
+    · prototype/mobile            → docs/mobile
 
 选项:
   -h, --help     显示帮助
@@ -50,9 +56,19 @@ if [[ ! -f "$SRC" ]]; then
   exit 1
 fi
 
+# 真源 docs/*.md → prototype/docs/md（先于 Pages 镜像）
+DOC_SRC_DIR="$ROOT/docs"
+DOC_DST_DIR="$ROOT/prototype/docs/md"
+if [[ -d "$DOC_SRC_DIR" ]]; then
+  mkdir -p "$DOC_DST_DIR"
+  cp "$DOC_SRC_DIR"/*.md "$DOC_DST_DIR/" 2>/dev/null || true
+  echo "已同步: docs/*.md → prototype/docs/md"
+fi
+
 mkdir -p "$(dirname "$DST")"
 cp "$SRC" "$DST"
 echo "已同步: prototype/index.html → docs/index.html"
+
 if [[ -f "$DOC_VIEWER_SRC" ]]; then
   mkdir -p "$(dirname "$DOC_VIEWER_DST")"
   cp "$DOC_VIEWER_SRC" "$DOC_VIEWER_DST"
@@ -63,16 +79,15 @@ if [[ -f "$DOC_VIEWER_SRC" ]]; then
     echo "已同步: prototype/docs/md → docs/documentation/md"
   fi
 fi
-DOC_SRC_DIR="$ROOT/docs"
-DOC_DST_DIR="$ROOT/prototype/docs/md"
-if [[ -d "$DOC_SRC_DIR" ]]; then
-  mkdir -p "$DOC_DST_DIR"
-  cp "$DOC_SRC_DIR"/*.md "$DOC_DST_DIR/" 2>/dev/null || true
-  echo "已同步: docs/*.md → prototype/docs/md"
+
+if [[ -d "$MOBILE_SRC" ]]; then
+  rm -rf "$MOBILE_DST"
+  cp -R "$MOBILE_SRC" "$MOBILE_DST"
+  echo "已同步: prototype/mobile → docs/mobile"
 fi
 
 if ! $do_commit; then
-  echo "下一步: git add docs/index.html prototype/index.html && git commit && git push"
+  echo "下一步: git add docs/ prototype/ && git commit && git push"
   echo "线上预览: $PAGES_URL"
   exit 0
 fi
@@ -83,10 +98,14 @@ if [[ -z "$msg" ]]; then
 fi
 
 git add "$DST" "$SRC"
-[[ -f "$DOC_VIEWER_DST" ]] && git add "$DOC_VIEWER_DST"
+[[ -f "$DOC_VIEWER_DST" ]] && git add "$DOC_VIEWER_SRC" "$DOC_VIEWER_DST"
+[[ -d "$ROOT/docs/documentation/md" ]] && git add docs/documentation/
+[[ -d "$MOBILE_DST" ]] && git add docs/mobile/
+[[ -d "$ROOT/prototype/docs/md" ]] && git add prototype/docs/md/
+[[ -d "$MOBILE_SRC" ]] && git add prototype/mobile/
 
 if git diff --cached --quiet; then
-  echo "无待提交改动（prototype 与 docs/index.html 均已是最新）"
+  echo "无待提交改动（prototype 与 docs/ 均已是最新）"
   if $do_push; then
     git push
     echo "已 push（无新 commit）"

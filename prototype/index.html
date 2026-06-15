@@ -208,7 +208,7 @@
         <p class="tree-hint" id="treeHint">运营商 · 换电运营与定价</p>
         <p class="tree-hint" style="margin-top:6px">
           <a href="mobile/index.html" style="color:#5eead4;font-size:12px">→ 骑手端原型</a><br>
-          <a href="docs/index.html" target="_blank" rel="noopener" style="color:#5eead4;font-size:12px">→ 产品文档</a>
+          <a id="navDocsLink" href="docs/index.html" target="_blank" rel="noopener" style="color:#5eead4;font-size:12px">→ 产品文档</a>
         </p>
       </div>
       <nav class="nav" id="nav"></nav>
@@ -409,8 +409,8 @@
       leasing: { name: ENT.leasing.name, type: "资金方", tree: "出租设备 · 协议与承租方还款" }
     };
     const NAV = {
-      platform: ["overview", "platformUsers", "platformOrders", "platformDevices", "platformChannels", "platformFlows", "platformAccounts", "operators", "l1Pricing"],
-      operator: ["overview", "pricing", "channelSales", "sites", "devices", "leaseAgreements", "leaseRent", "orders", "flows", "interOp", "platformFee", "employees", "users", "partnerProfit", "accounts"],
+      platform: ["overview", "platformUsers", "platformOrders", "platformDevices", "platformChannels", "platformFlows", "platformAccounts", "operators", "depositManage", "l1Pricing"],
+      operator: ["overview", "pricing", "channelSales", "sites", "devices", "leaseAgreements", "leaseRent", "orders", "flows", "depositAccount", "interOp", "platformFee", "employees", "users", "partnerProfit", "accounts"],
       channel: ["overview", "dayPool", "employees"],
       leasing: ["overview", "employees", "leaseAgreements", "leaseCollect", "accounts"]
     };
@@ -419,8 +419,8 @@
       orders: "我的订单", flows: "我的流水", users: "用户", partnerProfit: "合作伙伴分润",
       leaseAgreements: "协议与设备", leaseCollect: "租金收缴", leaseRent: "月租金",
       accounts: "收款账户", partnerAccount: "个人账户", dayPool: "人天额度池",
-      pricing: "定价管理", channelSales: "渠道销售", interOp: "运营商往来账", platformFee: "平台服务费",
-      operators: "运营商管理", deviceBinding: "设备绑定", l1Pricing: "平台统价",
+      pricing: "定价管理", channelSales: "渠道销售", depositAccount: "保证金账户", interOp: "运营商往来账", platformFee: "平台服务费",
+      operators: "运营商管理", depositManage: "保证金管理", deviceBinding: "设备绑定", l1Pricing: "平台统价",
       platformUsers: "用户管理", platformOrders: "订单管理", platformDevices: "设备管理",
       platformChannels: "渠道商管理", platformFlows: "流水管理", platformAccounts: "平台账户"
     };
@@ -448,7 +448,8 @@
       "day_pool.export": ["dayPool"],
       "pricing.view": ["pricing"], "pricing.edit": ["pricing"],
       "channel_sales.view": ["channelSales"],
-      "inter_op.view": ["interOp"],
+      "inter_op.view": ["interOp", "depositAccount"],
+      "deposit.view": ["depositAccount"],
       "platform_fee.view": ["platformFee"]
     };
 
@@ -472,8 +473,10 @@
       pricing: ["定价管理", "运营商维护 C 端个人套餐零售价与渠道商人天批发价。"],
       channelSales: ["渠道销售", "新增/编辑签约渠道商、批发订单与已售额度池实例。"],
       interOp: ["运营商往来账", "跨站跨网设备服务费 经平台代收/代付；日清优先划扣保证金，保证金为 0 才启用信用额度；不展示对手方。"],
+      depositAccount: ["保证金账户", "查看平台清分专户、提交对公充值申请、查询到账与变动明细。"],
       platformFee: ["平台服务费", "B 端按确认消耗向额度售卖方 U 计提 1%；优先划扣保证金，保证金为 0 才占用信用额度。"],
       operators: ["运营商管理", "新增与维护运营商主体；账户汇总、保证金与信用额度。"],
+      depositManage: ["保证金管理", "平台清分专户、运营商对公充值确认、保证金/信用额度调整与变动账本。"],
       deviceBinding: ["设备绑定", "仅平台可将物联网设备绑定至运营商；绑定后运营商方可分配至站点。"],
       l1Pricing: ["平台统价", "维护跨网柜机/电池服务费与人天标准日值；运营商后台只读展示。"],
       platformUsers: ["用户管理", "全平台骑手档案：当前服务运营商、套餐/人天权益、渠道归属、用户状态、持有电池。"],
@@ -505,7 +508,12 @@
       overview_orders: { title: "订单数", content: "筛选期内支付成功或退款中的包月/次卡订单笔数。" },
       overview_net: { title: "可分配经营收入", content: "确认收入扣支付通道手续费后，为本站可分配经营净收入；平台不参与骑手套餐/换电运营分成（演示平台运营分成 " + PLATFORM_OPS_SHARE + "%）。" },
       platform_no_share: { title: "平台运营分成", content: "骑手套餐/换电应分台账记录运营商本站经营应得；合作伙伴场地分润另表。平台收取 1% 技术服务费（C 端支付分账 + B 端确认消耗计提），见「平台服务费」。" },
-      pricing_pkg: { title: "个人套餐定价", content: "运营商按城市+站点+SKU 维护 C 端零售价。SKU：包月、7天、<strong>1天</strong>（购后24h）、<strong>单次</strong>（购后24h）。<strong>渠道兜底</strong>：须强制保留 1天+单次 各至少一款上架，供渠道成员无预占时在线支付。" },
+      pricing_pkg: { title: "个人套餐定价", content: "五层结构：<strong>通用</strong> / <strong>通用新人</strong> / <strong>默认（渠道应急）</strong> / <strong>站点覆盖</strong> / <strong>站点新人</strong>。新人套餐仅用户在该运营商<strong>首次个人套餐购买</strong>时展示，每用户每运营商<strong>仅一次</strong>（用过不退还资格）。" },
+      pricing_pkg_general: { title: "通用套餐", content: "运营商级默认定价。<strong>方案 B</strong>：按天含 7天、30天畅换、90天季卡；按次含 10次卡(30天)、30次卡(60天)。站点未覆盖时继承此价格。" },
+      pricing_pkg_newcomer_general: { title: "通用新人套餐", content: "运营商级新人专享价；用户在该运营商<strong>无任何历史支付成功个人套餐</strong>时，C 端展示并可购。<strong>每用户每运营商仅生效一次</strong>，购买后永久失去新人资格（退款不恢复）。" },
+      pricing_pkg_newcomer_site: { title: "站点新人套餐", content: "按站点配置新人专享价；用户在对应站点<strong>首购</strong>时优先于通用新人价。未配置站点新人价的站点，首购回退<strong>通用新人套餐</strong>（若有）。" },
+      pricing_pkg_fallback: { title: "默认套餐（渠道应急）", content: "面向渠道成员<strong>无预占人天</strong>时的在线自费兜底。<strong>必须</strong>保持 <strong>1天畅换 + 单次</strong> 各至少一款上架；不可删除，仅可调价/停用需有替代 SKU。不参与合伙人分润。" },
+      pricing_pkg_site: { title: "站点套餐", content: "按站点覆盖通用套餐零售价；<strong>默认套餐始终继承运营商默认价</strong>（一般不做站点级兜底拆分）。骑手购买价锁定在下单站点/套餐快照，跨站换电不改变已购价格。" },
       channel_sales: { title: "渠道销售", content: "运营商维护签约渠道、批发订单。<strong>已售额度池</strong>：每个渠道在本运营商下<strong>仅一个</strong>额度池实例；多次采购/续费/调账只产生<strong>额度变动记录</strong>（`DayPoolLedger`），不新建第二池。" },
       day_pool_one_per_operator: { title: "一运营商一池", content: "渠道商 × 运营商 = <strong>唯一</strong> `DayPool`。向第二家运营商签约才新增池；增购、赠送、退款、分配、预占/确认等均写入<strong>额度变动记录</strong>，不新建第二池。" },
       day_pool_b2b_settlement: { title: "B2B 资金与平台计提", content: "渠道<strong>采购/到账时</strong>批发款已是运营商收入（在线 T+0/T+1 或线下确认）。骑手<strong>确认消耗</strong>仅扣池余额，<strong>不向运营商二次打款</strong>；平台按标准人天价 × 1% 向额度售卖方计提（见「平台服务费」）。" },
@@ -515,8 +523,10 @@
       inter_op_privacy: { title: "平台代收代付", content: "运营商互不可见对方主体；往来账仅展示「平台代收」「平台代付」及金额，内部三元组由平台清分。" },
       inter_op_pricing: { title: "跨网使用费单价", content: "平台统一管控（暂定）：柜机 ¥0.5/次，电池 ¥0.1/次。运营商后台只读，变更由平台发布。" },
       inter_op_clearing: { title: "日清规则", content: "每天 23:59:59 汇总当日 跨网设备服务费明细并清分：优先划扣平台保证金，仅当保证金余额为 0 时才启用信用额度记账。周/月报表由日账单聚合。" },
-      operator_deposit: { title: "平台保证金", content: "运营商在平台预存的清分账户。平时 跨网设备服务费平台代收/代付、B 端 1% 平台费均从保证金划扣；余额为 0 后才启用信用额度。" },
+      operator_deposit: { title: "平台保证金", content: "运营商在平台预存的清分账户。平时 跨网设备服务费平台代收/代付、B 端 1% 平台费均从保证金划扣；余额为 0 后才启用信用额度。充值通过对公转账至平台清分专户，平台财务确认后入账。" },
       operator_credit: { title: "信用额度", content: "仅当平台保证金余额为 0 时启用，允许欠费记账。信用额度也用光后，自动关闭该运营商所属全部用户（个人+渠道）的跨网换电；本站换电不受影响。" },
+      deposit_recharge: { title: "对公充值流程", content: "① 运营商在「保证金账户」提交充值申请（金额、转账日期、银行流水号）；② 对公转账至平台清分专户（附言含运营商 ID）；③ 平台在「保证金管理 → 充值确认」核对到账后确认入账；④ 保证金余额增加，恢复保证金优先扣款。" },
+      deposit_manage: { title: "平台保证金管理", content: "平台维护清分收款专户；审核运营商对公充值；可手工调整保证金余额、设置信用额度上限。所有变动写入保证金账本。" },
       swap_policy: { title: "换电范围设置", content: "运营商可自主关闭跨网换电或跨站点换电。关闭跨网：向本运营商付费的用户不可在其他运营商换电，其他运营商用户也不可在本运营商站点换电（双向）。关闭跨站：同一运营商下，用户仅可在主绑定站点换电。" },
       swap_policy_cross_net: { title: "跨网换电", content: "关闭后：① 本运营商用户（个人+渠道）不可在其他运营商柜机换电；② 其他运营商用户不可在本运营商任意站点换电。与保证金/信用额度触发的停跨网叠加生效。" },
       swap_policy_cross_site: { title: "跨站点换电", content: "关闭后：本运营商旗下用户仅可在主绑定站点换电，不可前往同运营商其他站点（即使柜机、电池均归属本运营商）。" },
@@ -541,6 +551,7 @@
       orders_deposit_waiver: { title: "信用免押", content: "满足门槛可使用芝麻信用或微信支付分免押（无需实付押金，仍须遵守还电规则）。" },
       orders_swap: { title: "换电订单", content: "以表格列出换电单；须区分权益来源：**个人套餐**与**渠道人天**。每笔记录三元组：用户归属运营商 U、柜机归属运营商 C、电池归属运营商 B。U 向 C 付柜机服务费、向 B 付电池服务费（C/B 与 U 相同时不产生该项费用）。" },
       orders_swap_triplet: { title: "运营商三元组与 跨网设备服务费", content: "换电成功时 IoT 上报 userOwner/cabinetOwner/batteryOwner。应付方恒为 userOwner：C≠U 时代付柜机费 ¥0.5/次；B≠U 时代付电池费 ¥0.1/次；经平台保证金/信用额度日清。运营商往来账只见平台代收/代付。" },
+      orders_swap_soh: { title: "SOH（State of Health）", content: "换电时 BMS 上报的电池健康度（%），含归还电池与换出电池。用于平台侧资产衰减监管与故障追溯。<strong>仅平台管理员换电订单详情可见</strong>（列表不展示），运营商/渠道/资金方不展示。" },
       orders_swap_entitlement: { title: "权益来源", content: "个人套餐：骑手自费购买的包月/次卡，换电计入套餐使用次数，产生套餐应分。渠道人天：骑手为渠道商登记成员，换电消耗渠道额度池人天（预占→确认），不产生个人套餐应分，可能触发平台 1% 消耗计提。" },
       orders_swap_log: { title: "换电过程日志", content: "按时间记录：① 用户操作（扫码、确认）② 请求（App→平台 API）③ 设备动作（平台→柜机指令）④ 设备反馈（传感器/门态/BMS）。用于客诉与故障追溯。" },
       orders_usage: { title: "有效期内使用情况", content: "在套餐 valid_from～valid_to 内汇总：已换电次数、涉及站点、换电明细列表。次卡展示剩余次数；包月展示剩余天数与期内换电次数。" },
@@ -572,7 +583,7 @@
       entitlement_api: { title: "权益准入 API", content: "换电前调用 <code>POST /api/v1/entitlement/check</code>：入参 user_id、cabinet_sn、site_id；返回 allowed、entitlement_type（day_pool/personal_pkg）、pool_id、seller_operator_id（userOwner）、today_status（reserved/confirmed/failed/pending_first_swap）、fail_reason、fallback（推荐 1天/单次兜底 SKU）。预占失败时 allowed=false，骑手端引导在线自费，<strong>不扣渠道池</strong>。详设见文档「权益准入API.md」。" },
       day_pool_team: { title: "骑手团队", content: "渠道商创建<strong>骑手团队</strong>并<strong>绑定消耗额度池</strong>（必选）。一运营商一池时默认团队自动绑定；向多家运营商签约时各团队须指定对应池。登记/分配/预占/消耗均从团队绑定池扣减。" },
       day_pool_org: { title: "团队与额度池", content: "编排单元为<strong>团队</strong>（非组织/站点）。团队 <code>pool_id</code> 决定从哪个额度池扣减；额度使用规则为团队配置周期额度上限。" },
-      day_pool_retail: { title: "骑手零售价", content: "由运营商在「定价管理」维护；渠道商只读。渠道成员<strong>无预占人天</strong>时引导在线支付，默认推荐<strong>1天/单次</strong>兜底 SKU（购后24h有效）；<strong>不参与合伙人分润</strong>；平台 C 端 1% 在支付成功时收取。" },
+      day_pool_retail: { title: "骑手零售价", content: "由运营商在「定价管理」维护；渠道商只读。渠道成员<strong>无预占人天</strong>时引导在线支付，默认推荐<strong>1天畅换/单次</strong>兜底 SKU（购后24h有效）；<strong>不参与合伙人分润</strong>；平台 C 端 1% 在支付成功时收取。" },
       day_pool_allocate: { title: "分配与收回", content: "分配：从团队绑定池可用余额划出 N 人天给骑手（分配即开通，按池统一口径预占/确认）。收回/退出团队：剩余未用人天自动退回池余额。" },
       day_pool_contract: { title: "额度池规则", content: "平台统一（只读）：<strong>分配即开通</strong>；每日预占后<strong>换电或持电池</strong>确认消耗；池过期<strong>不退</strong>。B 端结算节奏由渠道商与运营商线下协商，不在此展示。" },
       day_pool_identity: { title: "个人与渠道互斥", content: "同一骑手<strong>不可同时</strong>拥有生效中个人套餐与渠道团队成员身份。加入团队前须<strong>退订或冻结</strong>个人套餐。退出团队（主动/被移除）时<strong>未用人天自动回池</strong>。" },
@@ -588,15 +599,16 @@
       platform_day_standard: { title: "人天标准日值", content: "平台统一设置 B 端 1% 计提基数，并向运营商展示；亦为运营商默认批发价，运营商可改。" },
       platform_stats: { title: "业务汇总", content: "统计全平台运营商、渠道商、站点、设备、订单与业务流水；平台营收 = C 端 1% 支付分账 + B 端人天确认消耗计提。" },
       platform_operator_device_gate: { title: "设备绑定前置", content: "运营商「我的设备」仅展示平台已绑定的柜机/电池；未绑定设备不会出现在运营商后台。" },
-      platform_orders: { title: "全平台订单", content: "套餐购买订单按售卖运营商过滤；换电订单展示全平台三元组与 跨网设备服务费；渠道商订单为人天批发采购单（PO-）。" },
-      platform_channel_po: { title: "渠道商采购支付", content: "渠道商下单时可选择<strong>线下支付</strong>或<strong>在线支付</strong>。在线：微信扫码、支付宝扫码，支付状态回调<strong>实时更新</strong>订单状态。线下：渠道商提交订单后状态为「待确认到账」，须<strong>售卖运营商</strong>在「渠道销售-批发订单」手动确认到账后，订单才变为已完成、额度池入账。" },
+      platform_orders: { title: "全平台订单", content: "套餐购买订单按售卖运营商过滤；换电订单展示全平台三元组与 跨网设备服务费；渠道商订单为人天批发采购单（PO-），<strong>平台仅只读查询</strong>，不可确认到账或操作支付。" },
+      platform_channel_po: { title: "渠道商采购支付", content: "渠道商下单时可选择<strong>线下支付</strong>或<strong>在线支付</strong>。在线：微信/支付宝扫码，支付回调<strong>自动更新</strong>订单状态（无需人工确认）。线下：状态为「待确认到账」，须<strong>售卖运营商</strong>在「渠道销售 → 批发订单」确认到账后入账。<strong>平台管理员本页仅监管查询</strong>，不参与确认。" },
       platform_users: { title: "用户服务运营商", content: "用户当前所属运营商取决于<strong>购买服务的提供方</strong>：个人套餐=套餐售卖运营商；渠道成员=人天额度售卖运营商（签约批发合同的 sellerOperator）。与换电三元组 userOwner 一致。" },
       platform_users_battery: { title: "持有电池", content: "仅<strong>服务中且已换电</strong>的用户展示持有电池（IoT 上报，只读）。<strong>已冻结</strong>：冻结前须还电，冻结期间不持有电池。<strong>中途完结</strong>：退款前提为已还电，该状态不持有电池。<strong>待首换开通</strong>：尚未使用换电服务，不持有电池。" },
       platform_users_freeze: { title: "申请冻结校验", content: "骑手申请冻结时，系统校验是否仍持有电池：若持有则拒绝并提示「请先归还电池后再申请冻结」。冻结生效后用户状态为已冻结，持有电池列显示「未持有」。" },
       platform_devices_import: { title: "批量导入", content: "支持 CSV/Excel 模板批量导入物联网入库设备列表（SN、类型、城市、规格）；导入后进入「待绑定」队列，须绑定运营商后运营商方可使用。" },
       platform_channels: { title: "渠道商监管查询", content: "渠道商主体由<strong>签约运营商</strong>在「渠道销售 → 签约渠道」添加与管理；平台管理员本页<strong>只读</strong>查看全平台渠道列表、签约运营商与人员明细，不可新增或编辑。渠道商不向骑手收款，采购人天时向运营商付款。" },
       channel_no_receipt: { title: "渠道商无收款账户", content: "渠道商仅作为 B 端采购方，向运营商购买人天额度；款项付至运营商收款账户。渠道商后台不提供进件/收款账户管理。" },
-      platform_flows: { title: "平台流水视角", content: "用户支付：C 端套餐/自费流水及 1% 平台分账。运营商之间：跨网柜机/电池费经平台代收代付的日清流水。平台提成：B 端确认消耗计提 + C 端支付分账汇总。" },
+      platform_flows: { title: "平台流水视角", content: "用户支付：C 端套餐/自费流水及 1% 平台分账。运营商之间：跨网柜机/电池费经平台代收代付的日清流水，含<strong>净额前/后保证金</strong>（负值表示占用信用额度）。平台提成：B 端确认消耗计提 + C 端支付分账汇总。" },
+      platform_flows_inter_deposit: { title: "净额前/后保证金", content: "日清账单轧差净额计入运营商清分账户前后的<strong>保证金余额</strong>。净额 &lt; 0 为代付划出、&gt; 0 为代收入账。保证金用尽后继续划出时，余额记为<strong>负值</strong>，表示占用<strong>信用额度</strong>（允许欠费记账）。<strong>仅平台「流水管理 → 运营商之间」展示</strong>。" },
       platform_account: { title: "平台收款账户", content: "智格平台 1% 技术服务费统一进入平台商户（微信/支付宝分账 + B 端代扣）；本页展示平台商户余额与营收，非运营商经营账户。" }
     };
 
@@ -635,13 +647,14 @@
       { id: "pricing.edit", label: "定价编辑" },
       { id: "channel_sales.view", label: "渠道销售" },
       { id: "inter_op.view", label: "运营商往来账" },
+      { id: "deposit.view", label: "保证金账户" },
       { id: "platform_fee.view", label: "平台服务费" }
     ];
 
     const employeeStore = {
       "OP-SX": [
         { id: "EMP-SX-01", roleType: "staff", name: "李小运维", phone: "137****2001", jobTitle: "站点运维", status: "启用", permissions: ["devices.view", "devices.edit", "orders.view", "users.view", "sites.view"] },
-        { id: "EMP-SX-02", roleType: "staff", name: "王会计", phone: "136****2002", jobTitle: "财务助理", status: "启用", permissions: ["flows.view", "partner_profit.view", "accounts.view", "orders.view", "platform_fee.view", "inter_op.view"] },
+        { id: "EMP-SX-02", roleType: "staff", name: "王会计", phone: "136****2002", jobTitle: "财务助理", status: "启用", permissions: ["flows.view", "partner_profit.view", "accounts.view", "orders.view", "platform_fee.view", "inter_op.view", "deposit.view"] },
         { id: "EMP-SX-P01", roleType: "partner", name: "浦东驿站物业合作方", contact: "陈经理 136****8801", loginPhone: "136****8801", profitRate: 30, rateLabel: "个人用户计提基数 × 比例", siteNames: ["浦东骑手驿站"], status: "启用", period: "2026-05", baseRevenue: 534.24, partnerShare: 160.2, pending: 420, orders: 4, permissions: ["partner_account.view", "partner_account.withdraw", "partner_profit.view"] },
         { id: "EMP-SX-P02", roleType: "partner", name: "世博场地合伙人", contact: "周女士 135****6602", loginPhone: "135****6602", profitRate: 12, rateLabel: "个人用户计提基数 × 比例", siteNames: ["世博换电服务点"], status: "启用", period: "2026-05", baseRevenue: 178.08, partnerShare: 21.4, pending: 180, orders: 1, permissions: ["partner_account.view", "partner_account.withdraw", "partner_profit.view"] }
       ],
@@ -655,11 +668,11 @@
     };
 
     const partnerProfitOrders = [
-      { operatorId: "OP-SX", partnerId: "EMP-SX-P01", partnerName: "浦东驿站物业合作方", orderType: "套餐", orderId: "SUB260524001", site: "浦东骑手驿站", cabinet: "CAB-22018", pkg: "包月30天", pay: 299, shareBase: 245, rate: 30, payout: "待结转", userId: "U1028", phone: "138****1028", payTime: "2026-05-01 09:12", userType: "个人" },
-      { operatorId: "OP-SX", partnerId: "EMP-SX-P01", partnerName: "浦东驿站物业合作方", orderType: "套餐", orderId: "SUB260524002", site: "浦东骑手驿站", cabinet: "CAB-22018", pkg: "包月30天", pay: 299, shareBase: 245, rate: 30, payout: "待结转", userId: "U1041", phone: "139****1041", payTime: "2026-05-10 14:20", userType: "个人" },
-      { operatorId: "OP-SX", partnerId: "EMP-SX-P01", partnerName: "浦东驿站物业合作方", orderType: "套餐", orderId: "SUB260401099", site: "浦东骑手驿站", cabinet: "CAB-22018", pkg: "包月30天", pay: 299, shareBase: 245, rate: 30, payout: "可打款", userId: "U9001", phone: "135****9001", payTime: "2026-04-01 08:00", userType: "个人" },
+      { operatorId: "OP-SX", partnerId: "EMP-SX-P01", partnerName: "浦东驿站物业合作方", orderType: "套餐", orderId: "SUB260524001", site: "浦东骑手驿站", cabinet: "CAB-22018", pkg: "30天畅换", pay: 299, shareBase: 245, rate: 30, payout: "待结转", userId: "U1028", phone: "138****1028", payTime: "2026-05-01 09:12", userType: "个人" },
+      { operatorId: "OP-SX", partnerId: "EMP-SX-P01", partnerName: "浦东驿站物业合作方", orderType: "套餐", orderId: "SUB260524002", site: "浦东骑手驿站", cabinet: "CAB-22018", pkg: "30天畅换", pay: 299, shareBase: 245, rate: 30, payout: "待结转", userId: "U1041", phone: "139****1041", payTime: "2026-05-10 14:20", userType: "个人" },
+      { operatorId: "OP-SX", partnerId: "EMP-SX-P01", partnerName: "浦东驿站物业合作方", orderType: "套餐", orderId: "SUB260401099", site: "浦东骑手驿站", cabinet: "CAB-22018", pkg: "30天畅换", pay: 299, shareBase: 245, rate: 30, payout: "可打款", userId: "U9001", phone: "135****9001", payTime: "2026-04-01 08:00", userType: "个人" },
       { operatorId: "OP-SX", partnerId: "EMP-SX-P01", partnerName: "浦东驿站物业合作方", orderType: "换电", orderId: "SW2605241201", site: "浦东骑手驿站", cabinet: "CAB-22018", pkg: "关联 SUB260524001", pay: 0, shareBase: 9.96, rate: 30, payout: "待结转", userId: "U1028", phone: "138****1028", payTime: "2026-05-24 12:05", userType: "个人" },
-      { operatorId: "OP-SX", partnerId: "EMP-SX-P02", partnerName: "世博场地合伙人", orderType: "套餐", orderId: "SUB260525001", site: "世博换电服务点", cabinet: "CAB-22021", pkg: "包月30天", pay: 299, shareBase: 245, rate: 12, payout: "待结转", userId: "U1055", phone: "136****1055", payTime: "2026-05-15 10:30", userType: "个人" }
+      { operatorId: "OP-SX", partnerId: "EMP-SX-P02", partnerName: "世博场地合伙人", orderType: "套餐", orderId: "SUB260525001", site: "世博换电服务点", cabinet: "CAB-22021", pkg: "30天畅换", pay: 299, shareBase: 245, rate: 12, payout: "待结转", userId: "U1055", phone: "136****1055", payTime: "2026-05-15 10:30", userType: "个人" }
     ];
 
     const partnerRulePending = [
@@ -760,25 +773,25 @@
     ];
 
     const batteries = [
-      { sn: "BAT-SH-1001", site: "浦东骑手驿站", city: "上海", soc: 92, health: "正常", inCab: "CAB-22018", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营" },
-      { sn: "BAT-SH-1002", site: "浦东骑手驿站", city: "上海", soc: 45, health: "正常", inCab: "柜外充电", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营" },
-      { sn: "BAT-SH-1044", site: "陆家嘴分站", city: "上海", soc: 78, health: "正常", inCab: "CAB-22044", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营" },
-      { sn: "BAT-SH-1045", site: "陆家嘴分站", city: "上海", soc: 12, health: "低电量预警", inCab: "CAB-22045", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营" },
-      { sn: "BAT-SH-1050", site: "浦东骑手驿站", city: "上海", soc: 90, health: "正常", inCab: "CAB-22050", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营", ownership: "租赁", lessorId: "LEASE-HD", lessorName: "华东设备租赁公司", leaseContractId: "LC-2501" },
-      { sn: "BAT-SH-1021", site: "世博换电服务点", city: "上海", soc: 88, health: "正常", inCab: "CAB-22021", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营" },
-      { sn: "BAT-SH-0901", site: "浦东骑手驿站", city: "上海", soc: 96, health: "正常", inCab: "CAB-22018", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营" },
-      { sn: "BAT-BJ-1001", site: "滨江换电站", city: "上海", soc: 94, health: "正常", inCab: "CAB-BJ-01", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营" }
+      { sn: "BAT-SH-1001", site: "浦东骑手驿站", city: "上海", soc: 92, soh: 93, health: "正常", inCab: "CAB-22018", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营" },
+      { sn: "BAT-SH-1002", site: "浦东骑手驿站", city: "上海", soc: 45, soh: 91, health: "正常", inCab: "柜外充电", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营" },
+      { sn: "BAT-SH-1044", site: "陆家嘴分站", city: "上海", soc: 78, soh: 88, health: "正常", inCab: "CAB-22044", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营" },
+      { sn: "BAT-SH-1045", site: "陆家嘴分站", city: "上海", soc: 12, soh: 72, health: "低电量预警", inCab: "CAB-22045", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营" },
+      { sn: "BAT-SH-1050", site: "浦东骑手驿站", city: "上海", soc: 90, soh: 96, health: "正常", inCab: "CAB-22050", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营", ownership: "租赁", lessorId: "LEASE-HD", lessorName: "华东设备租赁公司", leaseContractId: "LC-2501" },
+      { sn: "BAT-SH-1021", site: "世博换电服务点", city: "上海", soc: 88, soh: 90, health: "正常", inCab: "CAB-22021", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营" },
+      { sn: "BAT-SH-0901", site: "浦东骑手驿站", city: "上海", soc: 96, soh: 95, health: "正常", inCab: "CAB-22018", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营" },
+      { sn: "BAT-BJ-1001", site: "滨江换电站", city: "上海", soc: 94, soh: 92, health: "正常", inCab: "CAB-BJ-01", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营" }
     ];
 
     const packageOrders = [
       {
-        id: "SUB260524001", user: "U1028", phone: "138****1028", site: "浦东骑手驿站", city: "上海", pkg: "包月30天", pkgType: "monthly",
+        id: "SUB260524001", user: "U1028", phone: "138****1028", site: "浦东骑手驿站", city: "上海", pkg: "30天畅换", pkgType: "monthly",
         pay: 299, status: "服务中", serviceState: "服务中", payTime: "2026-05-01 09:12", validFrom: "2026-05-01", validTo: "2026-05-31",
         swapLimit: null, swapUsed: 42, accrued: 208, payout: "待结转", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营", cabinet: "CAB-22018",
         batteryDeposit: 99, depositPaid: 99, depositWaiver: null
       },
       {
-        id: "SUB260524002", user: "U1041", phone: "139****1041", site: "浦东骑手驿站", city: "上海", pkg: "包月30天", pkgType: "monthly",
+        id: "SUB260524002", user: "U1041", phone: "139****1041", site: "浦东骑手驿站", city: "上海", pkg: "30天畅换", pkgType: "monthly",
         pay: 299, status: "已冻结", serviceState: "已冻结", payTime: "2026-05-10 14:20", validFrom: "2026-05-10", validTo: "2026-06-09",
         swapLimit: null, swapUsed: 28, accrued: 81, payout: "待结转", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营", cabinet: "CAB-22018",
         batteryDeposit: 99, depositPaid: 0,
@@ -786,32 +799,32 @@
         freezeInfo: { applyTime: "2026-05-20 14:00", reason: "短期离岗", frozenDays: 7, maxFreezeDays: 30, resumeNote: "解冻后有效期顺延 7 天" }
       },
       {
-        id: "SUB260525001", user: "U1055", phone: "136****1055", site: "世博换电服务点", city: "上海", pkg: "包月30天", pkgType: "monthly",
+        id: "SUB260525001", user: "U1055", phone: "136****1055", site: "世博换电服务点", city: "上海", pkg: "30天畅换", pkgType: "monthly",
         pay: 299, status: "服务中", serviceState: "服务中", payTime: "2026-05-15 10:30", validFrom: "2026-05-15", validTo: "2026-06-14",
         swapLimit: null, swapUsed: 12, accrued: 58, payout: "待结转", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营", cabinet: "CAB-22021",
         batteryDeposit: 99, depositPaid: 99, depositWaiver: null
       },
       {
-        id: "SUB260523088", user: "U2088", phone: "137****2088", site: "陆家嘴分站", city: "上海", pkg: "包月30天", pkgType: "monthly",
+        id: "SUB260523088", user: "U2088", phone: "137****2088", site: "陆家嘴分站", city: "上海", pkg: "30天畅换", pkgType: "monthly",
         pay: 299, status: "中途完结", serviceState: "中途完结", payTime: "2026-05-18 16:35", validFrom: "2026-05-18", validTo: "2026-06-17",
         swapLimit: null, swapUsed: 6, accrued: 32, payout: "冻结", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营", cabinet: "CAB-22044",
         batteryDeposit: 99, depositPaid: 99, depositWaiver: null, endTime: "2026-05-22 09:00",
         refundInfo: {
           unusedService: 179, depositRefund: 99, totalRefund: 278, refunded: 120, pending: 158,
-          unusedFormula: "包月剩余 24 天 × 日单价",
+          unusedFormula: "30天畅换剩余 24 天 × 日单价",
           depositStatus: "待退押（已还电）", refundStatus: "部分退款中"
         }
       },
       {
-        id: "SUB260401099", user: "U9001", phone: "135****9001", site: "浦东骑手驿站", city: "上海", pkg: "包月30天", pkgType: "monthly",
+        id: "SUB260401099", user: "U9001", phone: "135****9001", site: "浦东骑手驿站", city: "上海", pkg: "30天畅换", pkgType: "monthly",
         pay: 299, status: "已完结", serviceState: "已完结", payTime: "2026-04-01 08:00", validFrom: "2026-04-01", validTo: "2026-04-30",
         swapLimit: null, swapUsed: 55, accrued: 220, payout: "可打款", deviceOwnerId: "OP-SX", deviceOwnerName: "闪送驿站联营", cabinet: "CAB-22018",
         batteryDeposit: 99, depositPaid: 99, depositWaiver: null
       },
       {
-        id: "SUB260524015", user: "U3321", phone: "136****3321", site: "陆家嘴分站", city: "上海", pkg: "次卡10次", pkgType: "times",
-        pay: 89, status: "服务中", serviceState: "服务中", payTime: "2026-05-23 09:40", validFrom: "2026-05-23", validTo: "2026-08-23",
-        swapLimit: 10, swapUsed: 3, accrued: 27, payout: "待结转", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营", cabinet: "CAB-22044",
+        id: "SUB260524015", user: "U3321", phone: "136****3321", site: "陆家嘴分站", city: "上海", pkg: "10次卡", pkgType: "times",
+        pay: 79, status: "服务中", serviceState: "服务中", payTime: "2026-05-23 09:40", validFrom: "2026-05-23", validTo: "2026-06-21",
+        swapLimit: 10, swapUsed: 3, accrued: 24, payout: "待结转", deviceOwnerId: "OP-LJZ", deviceOwnerName: "陆家嘴联营", cabinet: "CAB-22044",
         batteryDeposit: 99, depositPaid: 0,
         depositWaiver: { type: "芝麻信用", score: 652, waivedAmount: 99 }
       },
@@ -976,16 +989,16 @@
     };
 
     const fundReceipts = [
-      { id: "RC260524001", type: "套餐支付", order: "SUB260524001", site: "浦东骑手驿站", city: "上海", user: "U1028", pkg: "包月30天", payee: "闪送驿站联营", deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 299, fee: 5.38, net: 293.62, channel: "微信支付", time: "2026-05-01 09:12", status: "成功" },
-      { id: "RC260524002", type: "套餐支付", order: "SUB260524002", site: "浦东骑手驿站", city: "上海", user: "U1041", pkg: "包月30天", payee: "闪送驿站联营", deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 299, fee: 5.38, net: 293.62, channel: "微信支付", time: "2026-05-10 14:20", status: "成功" },
-      { id: "RC260525001", type: "套餐支付", order: "SUB260525001", site: "世博换电服务点", city: "上海", user: "U1055", pkg: "包月30天", payee: "闪送驿站联营", deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 299, fee: 5.38, net: 293.62, channel: "微信支付", time: "2026-05-15 10:30", status: "成功" },
-      { id: "RC260523088", type: "套餐支付", order: "SUB260523088", site: "陆家嘴分站", city: "上海", user: "U2088", pkg: "包月30天", payee: "陆家嘴联营", deviceOwnerId: "OP-LJZ", mch: "2088999***", amount: 299, fee: 5.38, net: 293.62, channel: "支付宝", time: "2026-05-18 16:35", status: "成功" },
-      { id: "RC260523088R", type: "退款出款", order: "SUB260523088", site: "陆家嘴分站", city: "上海", user: "U2088", pkg: "包月30天", payee: "陆家嘴联营", deviceOwnerId: "OP-LJZ", mch: "2088999***", amount: -120, fee: 0, net: -120, channel: "原路退回", time: "2026-05-22 10:00", status: "处理中", note: "未使用套餐部分" },
-      { id: "RC260523088D", type: "押金退还", order: "SUB260523088", site: "陆家嘴分站", city: "上海", user: "U2088", pkg: "包月30天", payee: "陆家嘴联营", deviceOwnerId: "OP-LJZ", mch: "2088999***", amount: -99, fee: 0, net: -99, channel: "原路退回", time: "—", status: "待还电确认", note: "中途完结·电池已还后退押" },
-      { id: "RC260401099", type: "套餐支付", order: "SUB260401099", site: "浦东骑手驿站", city: "上海", user: "U9001", pkg: "包月30天", payee: "闪送驿站联营", deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 299, fee: 5.38, net: 293.62, channel: "微信支付", time: "2026-04-01 08:00", status: "成功" },
-      { id: "RC260524015", type: "套餐支付", order: "SUB260524015", site: "陆家嘴分站", city: "上海", user: "U3321", pkg: "次卡10次", payee: "陆家嘴联营", deviceOwnerId: "OP-LJZ", mch: "2088999***", amount: 89, fee: 1.6, net: 87.4, channel: "微信支付", time: "2026-05-23 09:40", status: "成功" },
+      { id: "RC260524001", type: "套餐支付", order: "SUB260524001", site: "浦东骑手驿站", city: "上海", user: "U1028", pkg: "30天畅换", payee: "闪送驿站联营", deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 299, fee: 5.38, net: 293.62, channel: "微信支付", time: "2026-05-01 09:12", status: "成功" },
+      { id: "RC260524002", type: "套餐支付", order: "SUB260524002", site: "浦东骑手驿站", city: "上海", user: "U1041", pkg: "30天畅换", payee: "闪送驿站联营", deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 299, fee: 5.38, net: 293.62, channel: "微信支付", time: "2026-05-10 14:20", status: "成功" },
+      { id: "RC260525001", type: "套餐支付", order: "SUB260525001", site: "世博换电服务点", city: "上海", user: "U1055", pkg: "30天畅换", payee: "闪送驿站联营", deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 299, fee: 5.38, net: 293.62, channel: "微信支付", time: "2026-05-15 10:30", status: "成功" },
+      { id: "RC260523088", type: "套餐支付", order: "SUB260523088", site: "陆家嘴分站", city: "上海", user: "U2088", pkg: "30天畅换", payee: "陆家嘴联营", deviceOwnerId: "OP-LJZ", mch: "2088999***", amount: 299, fee: 5.38, net: 293.62, channel: "支付宝", time: "2026-05-18 16:35", status: "成功" },
+      { id: "RC260523088R", type: "退款出款", order: "SUB260523088", site: "陆家嘴分站", city: "上海", user: "U2088", pkg: "30天畅换", payee: "陆家嘴联营", deviceOwnerId: "OP-LJZ", mch: "2088999***", amount: -120, fee: 0, net: -120, channel: "原路退回", time: "2026-05-22 10:00", status: "处理中", note: "未使用套餐部分" },
+      { id: "RC260523088D", type: "押金退还", order: "SUB260523088", site: "陆家嘴分站", city: "上海", user: "U2088", pkg: "30天畅换", payee: "陆家嘴联营", deviceOwnerId: "OP-LJZ", mch: "2088999***", amount: -99, fee: 0, net: -99, channel: "原路退回", time: "—", status: "待还电确认", note: "中途完结·电池已还后退押" },
+      { id: "RC260401099", type: "套餐支付", order: "SUB260401099", site: "浦东骑手驿站", city: "上海", user: "U9001", pkg: "30天畅换", payee: "闪送驿站联营", deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 299, fee: 5.38, net: 293.62, channel: "微信支付", time: "2026-04-01 08:00", status: "成功" },
+      { id: "RC260524015", type: "套餐支付", order: "SUB260524015", site: "陆家嘴分站", city: "上海", user: "U3321", pkg: "10次卡", payee: "陆家嘴联营", deviceOwnerId: "OP-LJZ", mch: "2088999***", amount: 79, fee: 1.42, net: 77.58, channel: "微信支付", time: "2026-05-23 09:40", status: "成功" },
       { id: "RC-POOL-001", type: "额度池采购", order: "QP-2601", site: "—", city: "上海", user: "—", pkg: "人天池 10000天", payee: PAYEE_OPERATOR, deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 85000, fee: 0, net: 85000, channel: "对公转账", time: "2026-01-05 10:00", status: "成功", note: "批发 ¥8.5/人天" },
-      { id: "RC-POOL-088", type: "额度池零售", order: "PAY-POOL-088", site: "浦东骑手驿站", city: "上海", user: "U2103", pkg: "1天套餐·渠道兜底", payee: PAYEE_OPERATOR, deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 29, fee: 0.29, net: 28.71, channel: "微信支付", time: "2026-06-09 07:50", status: "成功", note: "无预占人天·在线支付兜底；不参与合伙人分润" }
+      { id: "RC-POOL-088", type: "额度池零售", order: "PAY-POOL-088", site: "浦东骑手驿站", city: "上海", user: "U2103", pkg: "1天畅换·渠道兜底", payee: PAYEE_OPERATOR, deviceOwnerId: "OP-SX", mch: PAYEE_MCH.wx, amount: 29, fee: 0.29, net: 28.71, channel: "微信支付", time: "2026-06-09 07:50", status: "成功", note: "无预占人天·在线支付兜底；不参与合伙人分润" }
     ];
 
     const accrualLedger = [
@@ -1126,10 +1139,10 @@
     ];
 
     const dayPoolRetailPrices = [
-      { id: "RP-01", poolId: "QP-2601", city: "上海", site: "浦东骑手驿站", pkg: "包月30天", retailPrice: 299, wholesalePrice: 8.5, status: "生效", updatedAt: "2026-05-01" },
-      { id: "RP-02", poolId: "QP-2601", city: "上海", site: "世博换电服务点", pkg: "包月30天", retailPrice: 289, wholesalePrice: 8.5, status: "生效", updatedAt: "2026-05-01" },
-      { id: "RP-03", poolId: "QP-2601", city: "上海", site: "浦东骑手驿站", pkg: "次卡10次", retailPrice: 89, wholesalePrice: 8.5, status: "生效", updatedAt: "2026-04-15" },
-      { id: "RP-04", poolId: "QP-2601", city: "上海", site: "（运营商默认）", pkg: "1天套餐", retailPrice: 29, wholesalePrice: 8.5, channelFallback: true, validityHours: 24, status: "生效", updatedAt: "2026-06-01" },
+      { id: "RP-01", poolId: "QP-2601", city: "上海", site: "浦东骑手驿站", pkg: "30天畅换", retailPrice: 299, wholesalePrice: 8.5, status: "生效", updatedAt: "2026-05-01" },
+      { id: "RP-02", poolId: "QP-2601", city: "上海", site: "世博换电服务点", pkg: "30天畅换", retailPrice: 289, wholesalePrice: 8.5, status: "生效", updatedAt: "2026-05-01" },
+      { id: "RP-03", poolId: "QP-2601", city: "上海", site: "浦东骑手驿站", pkg: "10次卡", retailPrice: 79, wholesalePrice: 8.5, status: "生效", updatedAt: "2026-04-15" },
+      { id: "RP-04", poolId: "QP-2601", city: "上海", site: "（运营商默认）", pkg: "1天畅换", retailPrice: 29, wholesalePrice: 8.5, channelFallback: true, validityHours: 24, status: "生效", updatedAt: "2026-06-01" },
       { id: "RP-05", poolId: "QP-2601", city: "上海", site: "（运营商默认）", pkg: "单次换电", retailPrice: 9.9, wholesalePrice: 8.5, channelFallback: true, validityHours: 24, status: "生效", updatedAt: "2026-06-01" }
     ];
 
@@ -1156,12 +1169,19 @@
     ];
 
     const operatorPkgPrices = [
-      { id: "OP-P-01", operatorId: "OP-SX", city: "上海", site: "浦东骑手驿站", pkg: "包月30天", pkgType: "monthly", validityHours: null, channelFallback: false, retailPrice: 299, status: "生效", updatedAt: "2026-05-01" },
-      { id: "OP-P-02", operatorId: "OP-SX", city: "上海", site: "世博换电服务点", pkg: "包月30天", pkgType: "monthly", validityHours: null, channelFallback: false, retailPrice: 289, status: "生效", updatedAt: "2026-05-01" },
-      { id: "OP-P-03", operatorId: "OP-SX", city: "上海", site: "浦东骑手驿站", pkg: "7天套餐", pkgType: "weekly", validityHours: null, channelFallback: false, retailPrice: 89, status: "生效", updatedAt: "2026-05-10" },
-      { id: "OP-P-04", operatorId: "OP-SX", city: "上海", site: "", pkg: "1天套餐", pkgType: "daily", validityHours: 24, channelFallback: true, retailPrice: 29, status: "生效", updatedAt: "2026-06-01" },
-      { id: "OP-P-05", operatorId: "OP-SX", city: "上海", site: "", pkg: "单次换电", pkgType: "single", validityHours: 24, channelFallback: true, retailPrice: 9.9, status: "生效", updatedAt: "2026-06-01" },
-      { id: "OP-P-06", operatorId: "OP-SX", city: "上海", site: "浦东骑手驿站", pkg: "次卡10次", pkgType: "times", validityHours: null, channelFallback: false, retailPrice: 89, status: "生效", updatedAt: "2026-04-15" }
+      { id: "OP-P-G01", operatorId: "OP-SX", city: "上海", site: "", priceScope: "general", pkg: "7天套餐", pkgType: "weekly", billingMode: "按天", validityDays: 7, swapLimit: null, validityHours: null, channelFallback: false, retailPrice: 89, status: "生效", updatedAt: "2026-05-10" },
+      { id: "OP-P-G02", operatorId: "OP-SX", city: "上海", site: "", priceScope: "general", pkg: "30天畅换", pkgType: "monthly", billingMode: "按天", validityDays: 30, swapLimit: null, validityHours: null, channelFallback: false, retailPrice: 299, status: "生效", updatedAt: "2026-05-01" },
+      { id: "OP-P-G03", operatorId: "OP-SX", city: "上海", site: "", priceScope: "general", pkg: "90天季卡", pkgType: "quarterly", billingMode: "按天", validityDays: 90, swapLimit: null, validityHours: null, channelFallback: false, retailPrice: 799, status: "生效", updatedAt: "2026-05-15" },
+      { id: "OP-P-G04", operatorId: "OP-SX", city: "上海", site: "", priceScope: "general", pkg: "10次卡", pkgType: "times", billingMode: "按次", validityDays: 30, swapLimit: 10, validityHours: null, channelFallback: false, retailPrice: 79, status: "生效", updatedAt: "2026-04-15" },
+      { id: "OP-P-G05", operatorId: "OP-SX", city: "上海", site: "", priceScope: "general", pkg: "30次卡", pkgType: "times", billingMode: "按次", validityDays: 60, swapLimit: 30, validityHours: null, channelFallback: false, retailPrice: 199, status: "生效", updatedAt: "2026-04-20" },
+      { id: "OP-P-F01", operatorId: "OP-SX", city: "上海", site: "", priceScope: "fallback", pkg: "1天畅换", pkgType: "daily", billingMode: "按天", validityDays: 1, swapLimit: null, validityHours: 24, channelFallback: true, retailPrice: 29, status: "生效", updatedAt: "2026-06-01" },
+      { id: "OP-P-F02", operatorId: "OP-SX", city: "上海", site: "", priceScope: "fallback", pkg: "单次换电", pkgType: "single", billingMode: "按次", validityDays: null, swapLimit: 1, validityHours: 24, channelFallback: true, retailPrice: 9.9, status: "生效", updatedAt: "2026-06-01" },
+      { id: "OP-P-S01", operatorId: "OP-SX", city: "上海", site: "浦东骑手驿站", priceScope: "site", pkg: "30天畅换", pkgType: "monthly", billingMode: "按天", validityDays: 30, swapLimit: null, validityHours: null, channelFallback: false, retailPrice: 299, status: "生效", updatedAt: "2026-05-01" },
+      { id: "OP-P-S02", operatorId: "OP-SX", city: "上海", site: "世博换电服务点", priceScope: "site", pkg: "30天畅换", pkgType: "monthly", billingMode: "按天", validityDays: 30, swapLimit: null, validityHours: null, channelFallback: false, retailPrice: 289, status: "生效", updatedAt: "2026-05-01" },
+      { id: "OP-P-S03", operatorId: "OP-SX", city: "上海", site: "浦东骑手驿站", priceScope: "site", pkg: "7天套餐", pkgType: "weekly", billingMode: "按天", validityDays: 7, swapLimit: null, validityHours: null, channelFallback: false, retailPrice: 85, status: "生效", updatedAt: "2026-05-10" },
+      { id: "OP-P-NG01", operatorId: "OP-SX", city: "上海", site: "", priceScope: "newcomer_general", pkg: "7天新人专享", pkgType: "weekly", billingMode: "按天", validityDays: 7, swapLimit: null, validityHours: null, channelFallback: false, newcomerEligible: true, retailPrice: 59, status: "生效", updatedAt: "2026-06-01" },
+      { id: "OP-P-NG02", operatorId: "OP-SX", city: "上海", site: "", priceScope: "newcomer_general", pkg: "10次新人卡", pkgType: "times", billingMode: "按次", validityDays: 30, swapLimit: 10, validityHours: null, channelFallback: false, newcomerEligible: true, retailPrice: 49, status: "生效", updatedAt: "2026-06-01" },
+      { id: "OP-P-NS01", operatorId: "OP-SX", city: "上海", site: "世博换电服务点", priceScope: "newcomer_site", pkg: "30天新人畅换", pkgType: "monthly", billingMode: "按天", validityDays: 30, swapLimit: null, validityHours: null, channelFallback: false, newcomerEligible: true, retailPrice: 199, status: "生效", updatedAt: "2026-06-05" }
     ];
 
     const operatorDayQuotaPrices = [
@@ -1221,6 +1241,29 @@
       { operatorId: "OP-SX", depositBalance: 12500, creditLimit: 5000, used: 0, available: 5000, crossSwapEnabled: true, owed: 0 },
       { operatorId: "OP-LJZ", depositBalance: 0, creditLimit: 2000, used: 1980, available: 20, crossSwapEnabled: true, owed: 1980 },
       { operatorId: "OP-BJ", depositBalance: 0, creditLimit: 3000, used: 3100, available: 0, crossSwapEnabled: false, owed: 3100 }
+    ];
+
+    const platformClearingReceiveAccount = {
+      bankName: "招商银行股份有限公司上海张江支行",
+      accountName: "智格超能（上海）科技有限公司",
+      accountNo: "1219 0666 0000 6600",
+      transferRemark: "附言请填写：运营商ID + 保证金充值（例：OP-SX 保证金充值）"
+    };
+
+    let depositRechargeOrders = [
+      { id: "DR-20260608-001", operatorId: "OP-SX", amount: 10000, transferRef: "20260608123456", payerAccount: "3100****8821", transferDate: "2026-06-08", status: "已确认", submitTime: "2026-06-08 10:20", confirmTime: "2026-06-08 15:00", confirmedBy: "平台财务", remark: "首期保证金" },
+      { id: "DR-20260611-002", operatorId: "OP-SX", amount: 5000, transferRef: "20260611098765", payerAccount: "3100****8821", transferDate: "2026-06-11", status: "待确认", submitTime: "2026-06-11 09:30", confirmTime: null, confirmedBy: null, remark: "补足跨网清分" },
+      { id: "DR-20260610-003", operatorId: "OP-LJZ", amount: 3000, transferRef: "20260610111222", payerAccount: "2088999***", transferDate: "2026-06-10", status: "已驳回", submitTime: "2026-06-10 11:00", confirmTime: "2026-06-10 16:00", confirmedBy: "平台财务", remark: "续费", rejectReason: "转账金额与申请不一致" }
+    ];
+
+    let depositLedger = [
+      { id: "DL-001", operatorId: "OP-SX", time: "2026-01-05 15:00", type: "对公充值", delta: 10000, balanceAfter: 10000, ref: "DR-20260105-001", by: "平台财务" },
+      { id: "DL-002", operatorId: "OP-SX", time: "2026-06-01 10:00", type: "对公充值", delta: 3000, balanceAfter: 13000, ref: "线下补录", by: "平台财务" },
+      { id: "DL-003", operatorId: "OP-SX", time: "2026-06-08 23:59", type: "日清划扣", delta: -0.9, balanceAfter: 12999.1, ref: "IOB-2026-06-08", by: "系统" },
+      { id: "DL-004", operatorId: "OP-SX", time: "2026-06-09 08:30", type: "平台费代扣", delta: -0.085, balanceAfter: 12999.015, ref: "PF-004", by: "系统" },
+      { id: "DL-005", operatorId: "OP-SX", time: "2026-06-09 23:59", type: "日清划扣", delta: -499.015, balanceAfter: 12500, ref: "IOB-2026-06-09", by: "系统" },
+      { id: "DL-006", operatorId: "OP-LJZ", time: "2026-05-20 12:00", type: "对公充值", delta: 2000, balanceAfter: 2000, ref: "DR-20260520-001", by: "平台财务" },
+      { id: "DL-007", operatorId: "OP-LJZ", time: "2026-06-09 23:59", type: "日清划扣", delta: -2000, balanceAfter: 0, ref: "IOB-2026-06-09-LJZ", by: "系统" }
     ];
 
     const platformOperators = [
@@ -1296,10 +1339,12 @@
     ];
 
     const interOpDailyBills = [
-      { id: "IOB-2026-06-09", date: "2026-06-09", operatorId: "OP-SX", platformPayOut: 1.2, platformPayIn: 0, net: -1.2, swapCount: 2, deductSource: "保证金", clearedAt: "2026-06-09 " + INTER_OP_CLEAR_TIME, status: "待日清" },
-      { id: "IOB-2026-06-08", date: "2026-06-08", operatorId: "OP-SX", platformPayOut: 1.2, platformPayIn: 0.3, net: -0.9, swapCount: 3, deductSource: "保证金", clearedAt: "2026-06-08 " + INTER_OP_CLEAR_TIME, status: "已清分" },
-      { id: "IOB-2026-06-09-BJ", date: "2026-06-09", operatorId: "OP-BJ", platformPayOut: 0, platformPayIn: 0.5, net: 0.5, swapCount: 1, deductSource: "保证金", clearedAt: "2026-06-09 " + INTER_OP_CLEAR_TIME, status: "待日清" },
-      { id: "IOB-2026-06-09-LJZ", date: "2026-06-09", operatorId: "OP-LJZ", platformPayOut: 0, platformPayIn: 0.1, net: 0.1, swapCount: 1, deductSource: "保证金", clearedAt: "2026-06-09 " + INTER_OP_CLEAR_TIME, status: "待日清" }
+      { id: "IOB-2026-06-09", date: "2026-06-09", operatorId: "OP-SX", platformPayOut: 1.2, platformPayIn: 0, net: -1.2, swapCount: 2, deductSource: "保证金", depositBefore: 12500, depositAfter: 12498.8, clearedAt: "2026-06-09 " + INTER_OP_CLEAR_TIME, status: "待日清" },
+      { id: "IOB-2026-06-08", date: "2026-06-08", operatorId: "OP-SX", platformPayOut: 1.2, platformPayIn: 0.3, net: -0.9, swapCount: 3, deductSource: "保证金", depositBefore: 13000, depositAfter: 12999.1, clearedAt: "2026-06-08 " + INTER_OP_CLEAR_TIME, status: "已清分" },
+      { id: "IOB-2026-06-09-BJ", date: "2026-06-09", operatorId: "OP-BJ", platformPayOut: 0, platformPayIn: 0.5, net: 0.5, swapCount: 1, deductSource: "保证金", depositBefore: 0, depositAfter: 0.5, clearedAt: "2026-06-09 " + INTER_OP_CLEAR_TIME, status: "待日清" },
+      { id: "IOB-2026-06-09-LJZ", date: "2026-06-09", operatorId: "OP-LJZ", platformPayOut: 0, platformPayIn: 0.1, net: 0.1, swapCount: 1, deductSource: "保证金", depositBefore: 0, depositAfter: 0.1, clearedAt: "2026-06-09 " + INTER_OP_CLEAR_TIME, status: "待日清" },
+      { id: "IOB-2026-06-08-LJZ", date: "2026-06-08", operatorId: "OP-LJZ", platformPayOut: 1.5, platformPayIn: 0, net: -1.5, swapCount: 3, deductSource: "信用额度", depositBefore: 0, depositAfter: -1.5, clearedAt: "2026-06-08 " + INTER_OP_CLEAR_TIME, status: "已清分" },
+      { id: "IOB-2026-06-07-BJ", date: "2026-06-07", operatorId: "OP-BJ", platformPayOut: 3.2, platformPayIn: 0.2, net: -3.0, swapCount: 5, deductSource: "信用额度", depositBefore: -2800, depositAfter: -3100, clearedAt: "2026-06-07 " + INTER_OP_CLEAR_TIME, status: "已清分" }
     ];
 
     const interOpPeriodBills = [
@@ -1371,6 +1416,7 @@
       view: "overview",
       deviceTab: "cabinet", orderTab: "package", flowTab: "receipt",
       platformOrderTab: "package", platformFlowTab: "userPay", platformDeviceTab: "ledger", platformChannelTab: "list",
+      depositTab: "pending",
       dayPoolTab: "pools", dayPoolSelectedId: "QP-2601", dayPoolConsumeSubTab: "rider",
       pricingTab: "pkg", channelSalesTab: "contracts",
       partnerProfitSub: "全部", employeeTab: "staff", pf: {},
@@ -1505,6 +1551,25 @@
     function ownerFromBatterySn(sn) {
       const b = batteries.find(x => x.sn === sn);
       return b ? { id: b.deviceOwnerId, name: b.deviceOwnerName } : null;
+    }
+
+    function batterySohPercent(bat) {
+      if (!bat) return null;
+      if (bat.soh != null) return bat.soh;
+      const rec = batteries.find(x => x.sn === bat.sn);
+      if (rec?.soh != null) return rec.soh;
+      if (bat.health?.includes("预警") || bat.health?.includes("故障")) return 75;
+      return 94;
+    }
+
+    function swapBatDetailLine(bat) {
+      if (!bat) return "—";
+      let txt = `${bat.sn} · SOC ${bat.soc}% · ${bat.health}`;
+      if (isPlatformRole()) {
+        const soh = batterySohPercent(bat);
+        txt += ` · SOH ${soh}%`;
+      }
+      return txt;
     }
 
     /** 换电单三元组 + 跨网设备服务费（U≠C/B 时产生） */
@@ -1774,9 +1839,6 @@
       if (role === "operator" && o.orderStatus === "待确认到账" && o.operatorId === currentEntity().id) {
         return `<button type="button" class="link-btn" data-confirm-channel-po="${o.id}">确认到账</button>`;
       }
-      if (role === "platform" && o.payChannel === "online" && ["待支付", "支付中"].includes(o.orderStatus)) {
-        return `<button type="button" class="link-btn" data-simulate-online-pay="${o.id}">模拟支付成功</button>`;
-      }
       if (o.orderStatus === "已完成" && o.confirmedBy) {
         return `<small style="color:var(--muted)">${o.confirmedBy} 确认</small>`;
       }
@@ -1844,8 +1906,86 @@
     function isOperatorRole() { return state.role === "operator"; }
     function isPlatformRole() { return state.role === "platform"; }
 
+    function depositBalanceCell(amount) {
+      if (amount == null || amount === undefined) return "—";
+      const n = Math.round(amount * 1000) / 1000;
+      if (n < 0) {
+        return `<strong style="color:var(--red)">¥${n.toLocaleString("zh-CN")}</strong><br><small style="color:var(--muted)">信用额度</small>`;
+      }
+      return `<strong>¥${n.toLocaleString("zh-CN")}</strong>`;
+    }
+
     function creditForOperator(operatorId) {
       return operatorCreditAccounts.find(a => a.operatorId === operatorId) || null;
+    }
+
+    function myDepositRechargeOrders() {
+      return depositRechargeOrders.filter(o => o.operatorId === currentEntity().id);
+    }
+
+    function pendingDepositRechargeCount() {
+      return depositRechargeOrders.filter(o => o.status === "待确认").length;
+    }
+
+    function operatorNameById(id) {
+      return platformOperators.find(o => o.id === id)?.name || id;
+    }
+
+    function appendDepositLedger(operatorId, type, delta, ref, by) {
+      const credit = creditForOperator(operatorId);
+      if (!credit) return;
+      credit.depositBalance = Math.round((credit.depositBalance + delta) * 1000) / 1000;
+      depositLedger.unshift({
+        id: "DL-" + Date.now(),
+        operatorId,
+        time: new Date().toISOString().slice(0, 19).replace("T", " "),
+        type,
+        delta: Math.round(delta * 1000) / 1000,
+        balanceAfter: credit.depositBalance,
+        ref: ref || "—",
+        by
+      });
+    }
+
+    function confirmDepositRecharge(orderId) {
+      const o = depositRechargeOrders.find(x => x.id === orderId);
+      if (!o || o.status !== "待确认") return false;
+      o.status = "已确认";
+      o.confirmTime = new Date().toISOString().slice(0, 19).replace("T", " ");
+      o.confirmedBy = "平台财务";
+      appendDepositLedger(o.operatorId, "对公充值", o.amount, o.id, "平台财务");
+      return true;
+    }
+
+    function rejectDepositRecharge(orderId, reason) {
+      const o = depositRechargeOrders.find(x => x.id === orderId);
+      if (!o || o.status !== "待确认") return false;
+      o.status = "已驳回";
+      o.confirmTime = new Date().toISOString().slice(0, 19).replace("T", " ");
+      o.confirmedBy = "平台财务";
+      o.rejectReason = reason || "资料不符";
+      return true;
+    }
+
+    function submitDepositRecharge(form) {
+      const amount = Number(form.amount);
+      if (!amount || amount <= 0) return "请输入有效充值金额";
+      if (!form.transferRef?.trim()) return "请填写银行流水号/转账参考号";
+      const id = "DR-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + String(depositRechargeOrders.length + 1).padStart(3, "0");
+      depositRechargeOrders.unshift({
+        id,
+        operatorId: currentEntity().id,
+        amount,
+        transferRef: form.transferRef.trim(),
+        payerAccount: (form.payerAccount || "").trim() || "—",
+        transferDate: form.transferDate || new Date().toISOString().slice(0, 10),
+        status: "待确认",
+        submitTime: new Date().toISOString().slice(0, 19).replace("T", " "),
+        confirmTime: null,
+        confirmedBy: null,
+        remark: (form.remark || "").trim()
+      });
+      return null;
     }
 
     function operatorAggregateStats(operatorId) {
@@ -2519,7 +2659,10 @@
           k === "partnerProfit" || k === "partnerAccount" ? "nav-partner-profit" : "",
           k === "dayPool" ? "nav-day-pool" : ""
         ].filter(Boolean).join(" ");
-        const badge = k === "partnerProfit" ? " ★" : k === "dayPool" && myDayPools().some(p => p.balancePct < 20) ? " !" : "";
+        const badge = k === "partnerProfit" ? " ★"
+          : k === "dayPool" && myDayPools().some(p => p.balancePct < 20) ? " !"
+          : k === "depositManage" && pendingDepositRechargeCount() > 0 ? " !"
+          : "";
         return `<button type="button" class="${cls}" data-view="${k}">${NAV_LABEL[k]}${badge}</button>`;
       }).join("");
     }
@@ -3032,7 +3175,7 @@
         ${op.remark ? `<p style="font-size:12px;color:var(--muted);margin:12px 0 0">备注：${op.remark}</p>` : ""}
         <div style="margin-top:16px;display:flex;gap:8px">
           <button type="button" class="btn primary" data-edit-operator="${op.id}">编辑信息</button>
-          <button type="button" class="btn" data-adjust-credit="${op.id}">调整保证金/额度（演示）</button>
+          <button type="button" class="btn" data-view-jump="depositManage" data-depstab-jump="pending">保证金管理</button>
         </div>`;
       state.detailOperatorId = opId;
       state.detailSubId = null;
@@ -3333,6 +3476,171 @@
         </section>`;
     }
 
+    function renderDepositAccount() {
+      const credit = myOperatorCredit();
+      const recv = platformClearingReceiveAccount;
+      const orders = myDepositRechargeOrders();
+      const ledger = depositLedger.filter(l => l.operatorId === currentEntity().id);
+      const pending = orders.filter(o => o.status === "待确认").length;
+      return `${ownScopeBanner()}
+        <div class="platform-price-banner" style="margin-bottom:14px">${noteBtn("deposit_recharge")}${noteBtn("operator_deposit")}
+          跨网清分与 B 端平台费优先从<strong>平台保证金</strong>划扣；余额为 0 才启用信用额度。充值须对公转账，平台确认后入账。</div>
+        <div class="kpi-grid">
+          ${kpi("平台保证金", credit ? "¥" + credit.depositBalance.toLocaleString("zh-CN") : "—", credit && credit.depositBalance > 0 ? "当前扣款账户" : "已用尽", "保", "operator_deposit")}
+          ${kpi("信用额度", credit ? "¥" + credit.creditLimit.toLocaleString("zh-CN") : "—", credit && credit.depositBalance <= 0 ? "已启用" : "未启用", "额", "operator_credit")}
+          ${kpi("待确认充值", pending, "笔申请等待平台核对", "待", "deposit_recharge")}
+          ${kpi("跨网状态", credit?.crossSwapEnabled ? "正常" : "已停", credit?.crossSwapEnabled ? "可跨网换电" : "信用额度用尽", "网", "operator_credit")}
+        </div>
+        <section class="panel">
+          ${panelHead("平台清分收款专户", "对公转账至此账户；附言须含运营商 ID", "deposit_recharge")}
+          <div class="panel-body">
+            <div class="detail-grid">
+              <div class="detail-item"><span>开户行</span><strong>${recv.bankName}</strong></div>
+              <div class="detail-item"><span>户名</span><strong>${recv.accountName}</strong></div>
+              <div class="detail-item"><span>账号</span><strong>${recv.accountNo}</strong></div>
+              <div class="detail-item"><span>附言要求</span><strong>${recv.transferRemark}</strong></div>
+            </div>
+          </div>
+        </section>
+        <section class="panel">
+          ${panelHead("提交充值申请", "转账后填写流水信息，平台财务确认到账后增加保证金", "deposit_recharge")}
+          <div class="panel-body">
+            <form id="depositRechargeForm" class="detail-grid" style="grid-template-columns:repeat(2,1fr)">
+              <label class="detail-item"><span>充值金额（元）*</span><input name="amount" type="number" min="1" step="0.01" placeholder="如 5000" style="width:100%;height:32px"></label>
+              <label class="detail-item"><span>转账日期 *</span><input name="transferDate" type="date" value="${new Date().toISOString().slice(0, 10)}" style="width:100%;height:32px"></label>
+              <label class="detail-item"><span>银行流水号/参考号 *</span><input name="transferRef" placeholder="对公回单流水号" style="width:100%;height:32px"></label>
+              <label class="detail-item"><span>付款账户（可选）</span><input name="payerAccount" placeholder="对公账户后四位" style="width:100%;height:32px"></label>
+              <label class="detail-item" style="grid-column:1/-1"><span>备注</span><input name="remark" placeholder="如：补足跨网清分" style="width:100%;height:32px"></label>
+            </form>
+            <div class="form-actions"><button type="button" class="btn primary" id="submitDepositRecharge">提交申请</button></div>
+          </div>
+        </section>
+        <section class="panel">
+          ${panelHead("我的充值申请", "待确认 / 已确认 / 已驳回", "deposit_recharge")}
+          <div class="panel-body orders-table-wrap">
+            <table>
+              <thead><tr><th>单号</th><th>金额</th><th>转账日</th><th>流水号</th><th>提交时间</th><th>状态</th><th>确认信息</th></tr></thead>
+              <tbody>${orders.map(o => `<tr>
+                <td>${o.id}</td><td>¥${o.amount.toLocaleString("zh-CN")}</td><td>${o.transferDate}</td>
+                <td>${o.transferRef}</td><td>${o.submitTime}</td><td>${tag(o.status)}</td>
+                <td>${o.status === "已确认" ? o.confirmTime + " · " + o.confirmedBy : o.status === "已驳回" ? (o.rejectReason || "—") : "等待平台核对到账"}</td>
+              </tr>`).join("") || "<tr><td colspan='7'>暂无充值申请</td></tr>"}</tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel">
+          ${panelHead("保证金变动明细", "充值入账、日清划扣、平台费代扣", "operator_deposit", `<button type="button" class="link-btn" data-view-jump="interOp">查看往来账</button>`)}
+          <div class="panel-body orders-table-wrap">
+            <table>
+              <thead><tr><th>时间</th><th>类型</th><th>变动</th><th>余额</th><th>关联单</th><th>操作方</th></tr></thead>
+              <tbody>${ledger.map(l => `<tr>
+                <td>${l.time}</td><td>${l.type}</td>
+                <td>${l.delta > 0 ? "+" : ""}¥${l.delta.toLocaleString("zh-CN")}</td>
+                <td>¥${l.balanceAfter.toLocaleString("zh-CN")}</td>
+                <td>${l.ref}</td><td>${l.by}</td>
+              </tr>`).join("") || "<tr><td colspan='6'>暂无变动</td></tr>"}</tbody>
+            </table>
+          </div>
+        </section>`;
+    }
+
+    function renderDepositManage() {
+      const tab = state.depositTab;
+      const tabs = [["pending", "充值确认"], ["accounts", "账户总览"], ["ledger", "变动明细"]];
+      const tabHtml = `<div class="tabs">${tabs.map(([k, label]) =>
+        `<button type="button" class="${tab === k ? "active" : ""}" data-depstab="${k}">${label}${k === "pending" && pendingDepositRechargeCount() ? " (" + pendingDepositRechargeCount() + ")" : ""}</button>`
+      ).join("")}</div>`;
+      const recv = platformClearingReceiveAccount;
+      let body = "";
+      if (tab === "pending") {
+        const pending = depositRechargeOrders.filter(o => o.status === "待确认");
+        body = `<section class="panel">
+          ${panelHead("待确认充值", "核对银行到账后确认入账", "deposit_manage")}
+          <div class="panel-body orders-table-wrap">
+            <table>
+              <thead><tr><th>单号</th><th>运营商</th><th>金额</th><th>转账日</th><th>流水号</th><th>付款户</th><th>提交时间</th><th>备注</th><th>操作</th></tr></thead>
+              <tbody>${pending.map(o => `<tr>
+                <td>${o.id}</td>
+                <td>${operatorNameById(o.operatorId)}<br><small>${o.operatorId}</small></td>
+                <td><strong>¥${o.amount.toLocaleString("zh-CN")}</strong></td>
+                <td>${o.transferDate}</td><td>${o.transferRef}</td><td>${o.payerAccount}</td>
+                <td>${o.submitTime}</td><td>${o.remark || "—"}</td>
+                <td>
+                  <button type="button" class="link-btn" data-confirm-deposit="${o.id}">确认到账</button>
+                  <button type="button" class="link-btn" data-reject-deposit="${o.id}">驳回</button>
+                </td>
+              </tr>`).join("") || "<tr><td colspan='9'>暂无待确认申请</td></tr>"}</tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel">
+          ${panelHead("近期已处理", "已确认 / 已驳回", "deposit_manage")}
+          <div class="panel-body orders-table-wrap">
+            <table>
+              <thead><tr><th>单号</th><th>运营商</th><th>金额</th><th>状态</th><th>处理时间</th><th>处理人</th></tr></thead>
+              <tbody>${depositRechargeOrders.filter(o => o.status !== "待确认").slice(0, 8).map(o => `<tr>
+                <td>${o.id}</td><td>${operatorNameById(o.operatorId)}</td>
+                <td>¥${o.amount.toLocaleString("zh-CN")}</td><td>${tag(o.status)}</td>
+                <td>${o.confirmTime || "—"}</td><td>${o.confirmedBy || "—"}</td>
+              </tr>`).join("") || "<tr><td colspan='6'>暂无</td></tr>"}</tbody>
+            </table>
+          </div>
+        </section>`;
+      } else if (tab === "accounts") {
+        body = `<section class="panel">
+          ${panelHead("清分收款专户", "运营商对公充值收款账户", "deposit_manage")}
+          <div class="panel-body detail-grid">
+            <div class="detail-item"><span>开户行</span><strong>${recv.bankName}</strong></div>
+            <div class="detail-item"><span>户名</span><strong>${recv.accountName}</strong></div>
+            <div class="detail-item"><span>账号</span><strong>${recv.accountNo}</strong></div>
+            <div class="detail-item"><span>附言</span><strong>${recv.transferRemark}</strong></div>
+          </div>
+        </section>
+        <section class="panel">
+          ${panelHead("运营商清分账户", "保证金余额与信用额度；可手工调额（演示）", "deposit_manage")}
+          <div class="panel-body orders-table-wrap">
+            <table>
+              <thead><tr><th>运营商</th><th>保证金</th><th>信用额度</th><th>已占用</th><th>跨网</th><th>操作</th></tr></thead>
+              <tbody>${platformOperators.map(op => {
+                const c = creditForOperator(op.id);
+                return `<tr>
+                  <td><strong>${op.name}</strong><br><small>${op.id}</small></td>
+                  <td>¥${(c?.depositBalance || 0).toLocaleString("zh-CN")}</td>
+                  <td>¥${(c?.creditLimit || 0).toLocaleString("zh-CN")}</td>
+                  <td>¥${(c?.used || 0).toLocaleString("zh-CN")}</td>
+                  <td>${c?.crossSwapEnabled ? tag("开启") : tag("已停")}</td>
+                  <td>
+                    <button type="button" class="link-btn" data-manual-deposit="${op.id}">手工入账</button>
+                    <button type="button" class="link-btn" data-adjust-credit-limit="${op.id}">调信用额度</button>
+                  </td>
+                </tr>`;
+              }).join("")}</tbody>
+            </table>
+          </div>
+        </section>`;
+      } else {
+        body = `<section class="panel">
+          ${panelHead("全平台保证金账本", "对公充值、日清划扣、平台费代扣、手工调整", "deposit_manage")}
+          <div class="panel-body orders-table-wrap">
+            <table>
+              <thead><tr><th>时间</th><th>运营商</th><th>类型</th><th>变动</th><th>余额</th><th>关联单</th><th>操作方</th></tr></thead>
+              <tbody>${depositLedger.map(l => `<tr>
+                <td>${l.time}</td>
+                <td>${operatorNameById(l.operatorId)}</td>
+                <td>${l.type}</td>
+                <td>${l.delta > 0 ? "+" : ""}¥${l.delta.toLocaleString("zh-CN")}</td>
+                <td>¥${l.balanceAfter.toLocaleString("zh-CN")}</td>
+                <td>${l.ref}</td><td>${l.by}</td>
+              </tr>`).join("") || "<tr><td colspan='7'>暂无</td></tr>"}</tbody>
+            </table>
+          </div>
+        </section>`;
+      }
+      return `${ownScopeBanner()}
+        <section class="panel"><div class="panel-head"><div><h2>保证金管理 ${noteBtn("deposit_manage")}</h2><span>平台清分专户 · 对公充值确认 · 信用额度治理</span></div>${tabHtml}</div></section>
+        ${body}`;
+    }
+
     function renderOperators() {
       const f = getPf();
       const rows = platformOperators.filter(op => {
@@ -3512,9 +3820,9 @@
         return `
           ${ownScopeBanner()}
           <section class="panel">
-            ${panelHead("渠道商批发订单", `共 ${rows.length} 笔人天采购`, "platform_channel_po", tabs)}
+            ${panelHead("渠道商批发订单", `共 ${rows.length} 笔人天采购 · 平台只读`, "platform_channel_po", tabs)}
             <div class="panel-body orders-table-wrap">
-              <p style="font-size:12px;color:var(--muted);margin:0 0 12px">${noteBtn("platform_channel_po")}</p>
+              <p style="font-size:12px;color:var(--muted);margin:0 0 12px">${noteBtn("platform_channel_po")} 线下到账由<strong>售卖运营商</strong>在「渠道销售 → 批发订单」确认；平台不参与确认。</p>
               <table>
                 <thead><tr>
                   <th>批发单号</th><th>渠道商</th><th>售卖运营商</th><th>人天/金额</th>
@@ -3553,6 +3861,7 @@
           <section class="panel">
             ${panelHead("全平台换电订单", `共 ${rows.length} 条`, "orders_swap_triplet", tabs)}
             <div class="panel-body orders-table-wrap">
+              <p style="font-size:12px;color:var(--muted);margin:0 0 12px">${noteBtn("orders_swap_triplet")}</p>
               <table>
                 <thead><tr><th>换电单</th><th>用户</th><th>用户运营商</th><th>柜机运营商</th><th>电池运营商</th><th>跨网服务费</th><th>站点</th><th>权益</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
                 <tbody>${rows.map(s => {
@@ -3771,18 +4080,21 @@
         return `
           ${ownScopeBanner()}
           <section class="panel">
-            ${panelHead("运营商间 跨网设备服务费清分流水", `日账单 ${rows.length} 条`, "platform_flows", tabs)}
+            ${panelHead("运营商间 跨网设备服务费清分流水", `日账单 ${rows.length} 条`, "platform_flows_inter_deposit", tabs)}
             <div class="panel-body orders-table-wrap">
-              <p style="font-size:12px;color:var(--muted);margin:0 0 12px">${noteBtn("inter_op")}${noteBtn("inter_op_privacy")} 平台视角可见双方运营商 ID，运营商后台只见代收/代付。</p>
+              <p style="font-size:12px;color:var(--muted);margin:0 0 12px">${noteBtn("inter_op")}${noteBtn("inter_op_privacy")}${noteBtn("platform_flows_inter_deposit")} 平台视角可见双方运营商 ID；净额后保证金为负表示占用信用额度。</p>
               <table>
-                <thead><tr><th>日账单</th><th>运营商</th><th>平台代付</th><th>平台代收</th><th>净额</th><th>换电笔数</th><th>扣款来源</th><th>状态</th></tr></thead>
+                <thead><tr><th>日账单</th><th>运营商</th><th>平台代付</th><th>平台代收</th><th>净额</th><th>净额前保证金</th><th>净额后保证金</th><th>换电笔数</th><th>扣款来源</th><th>状态</th></tr></thead>
                 <tbody>${rows.map(b => `<tr>
                   <td>${b.id}<br><small>${b.date}</small></td>
                   <td>${operatorLabel(b.operatorId)}</td>
                   <td>¥${b.platformPayOut}</td><td>¥${b.platformPayIn}</td>
-                  <td><strong>¥${b.net}</strong></td><td>${b.swapCount}</td>
+                  <td><strong>¥${b.net}</strong></td>
+                  <td>${depositBalanceCell(b.depositBefore)}</td>
+                  <td>${depositBalanceCell(b.depositAfter)}</td>
+                  <td>${b.swapCount}</td>
                   <td>${b.deductSource}</td><td>${tag(b.status)}</td>
-                </tr>`).join("") || "<tr><td colspan='8'>暂无</td></tr>"}</tbody>
+                </tr>`).join("") || "<tr><td colspan='10'>暂无</td></tr>"}</tbody>
               </table>
             </div>
           </section>`;
@@ -4299,9 +4611,9 @@
           <div class="detail-item"><span>站点</span><strong>${s.site}<br><small style="font-weight:400;color:var(--muted)">${s.siteId || ""} · ${s.city}</small></strong></div>
           <div class="detail-item"><span>换电柜</span><strong>${cab.sn || "—"} · ${cab.slots || "—"}仓<br><small style="font-weight:400">${cab.online === false ? "离线" : "在线"}</small></strong></div>
           <div class="detail-item"><span>还电格口</span><strong>${s.slotIn != null ? "#" + s.slotIn : "—"}</strong></div>
-          <div class="detail-item"><span>归还电池</span><strong>${s.batIn ? `${s.batIn.sn} · SOC ${s.batIn.soc}% · ${s.batIn.health}` : "—"}</strong></div>
+          <div class="detail-item"><span>归还电池</span><strong>${swapBatDetailLine(s.batIn)}</strong></div>
           <div class="detail-item"><span>换电格口</span><strong>${s.slotOut != null ? "#" + s.slotOut : "—"}</strong></div>
-          <div class="detail-item"><span>换出电池</span><strong>${s.batOut ? `${s.batOut.sn} · SOC ${s.batOut.soc}% · ${s.batOut.health}` : "—"}</strong></div>
+          <div class="detail-item"><span>换出电池</span><strong>${swapBatDetailLine(s.batOut)}</strong></div>
           <div class="detail-item"><span>订单状态</span><strong>${tag(s.status)}</strong></div>
         </div>
         ${swapTripletDetailHtml(s)}
@@ -4328,7 +4640,7 @@
         usagePct = Math.min(100, Math.round(p.swapUsed / p.swapLimit * 100));
         usageLabel = `次数已用 ${usagePct}%（${p.swapUsed}/${p.swapLimit}）`;
       } else {
-        usageLabel = `期内换电 ${p.swapUsed} 次 · 包月不限次`;
+        usageLabel = `期内换电 ${p.swapUsed} 次 · 按天套餐不限次`;
       }
 
       document.querySelector("#drawerTitle").textContent = "套餐订单 · " + p.id;
@@ -5466,8 +5778,10 @@
       const row = operatorPkgPrices.find(r => r.id === id);
       if (!row) return;
       state.pricingEditId = id;
-      document.querySelector("#pricingFormTitle").textContent = "编辑零售价 · " + row.pkg;
+      document.querySelector("#pricingFormTitle").textContent = "编辑零售价 · " + row.pkg + (row.newcomerEligible ? "（新人套餐）" : "");
+      const newcomerNote = row.newcomerEligible ? `<p style="font-size:12px;color:var(--muted);margin:0 0 12px;grid-column:1/-1">新人套餐：用户在该运营商首次个人套餐购买时可享，每用户仅一次。</p>` : "";
       document.querySelector("#pricingForm").innerHTML = `
+        ${newcomerNote}
         <label>城市<input name="city" value="${row.city}" readonly /></label>
         <label>站点<input name="site" value="${row.site}" readonly /></label>
         <label>套餐<input name="pkg" value="${row.pkg}" readonly /></label>
@@ -5495,6 +5809,106 @@
       window.alert("演示：零售价已更新（仅本地 Mock）");
     }
 
+    function pkgValidityLabel(r) {
+      if (r.validityHours) return "购后 " + r.validityHours + "h";
+      if (r.billingMode === "按次" && r.swapLimit) {
+        const days = r.validityDays ? r.validityDays + " 天内" : "";
+        return r.swapLimit + " 次" + (days ? " · " + days : "");
+      }
+      if (r.validityDays) return r.validityDays + " 自然日";
+      return "按 SKU";
+    }
+
+    function pricingScopeTag(r) {
+      if (r.priceScope === "general") return tag("通用");
+      if (r.priceScope === "fallback") return '<span class="tag warn">默认</span>';
+      if (r.priceScope === "site") return '<span class="tag">站点</span>';
+      if (r.priceScope === "newcomer_general") return '<span class="tag" style="background:#e8f4fd;color:#1677ff">通用新人</span>';
+      if (r.priceScope === "newcomer_site") return '<span class="tag" style="background:#e8f4fd;color:#1677ff">站点新人</span>';
+      return "—";
+    }
+
+    function renderPricingPkgTable(rows, opts = {}) {
+      const { showScope = false, readonlyScope = false, showNewcomer = false } = opts;
+      return `<table>
+        <thead><tr>
+          ${showScope ? "<th>层级</th>" : ""}
+          <th>城市</th>${!showScope || rows.some(r => r.site) ? "<th>站点</th>" : ""}
+          <th>套餐</th><th>计费</th><th>权益</th>${showNewcomer ? "<th>新人</th>" : "<th>渠道应急</th>"}<th>零售价</th><th>状态</th><th>更新时间</th><th>操作</th>
+        </tr></thead>
+        <tbody>${rows.map(r => `<tr>
+          ${showScope ? `<td>${pricingScopeTag(r)}</td>` : ""}
+          <td>${r.city}</td>${(!showScope || r.site || rows.some(x => x.site)) ? `<td>${r.site || "全站点默认"}</td>` : ""}
+          <td>${r.pkg}</td>
+          <td>${r.billingMode || "—"}</td>
+          <td>${pkgValidityLabel(r)}</td>
+          <td>${showNewcomer || r.newcomerEligible ? tag("首购一次") : r.channelFallback ? tag("必选") : "—"}</td>
+          <td>¥${r.retailPrice}</td><td>${tag(r.status)}</td><td>${r.updatedAt}</td>
+          <td>${readonlyScope && r.priceScope === "fallback" ? `<button type="button" class="link-btn" data-edit-pricing="${r.id}">调价</button>` : `<button type="button" class="link-btn" data-edit-pricing="${r.id}">编辑</button>`}</td>
+        </tr>`).join("") || "<tr><td colspan='10'>暂无</td></tr>"}</tbody>
+      </table>`;
+    }
+
+    function renderPricingNewcomerSiteTable(allRows, siteNames) {
+      const generalNew = allRows.filter(r => r.priceScope === "newcomer_general");
+      const siteNew = allRows.filter(r => r.priceScope === "newcomer_site");
+      const rows = [];
+      siteNames.forEach(site => {
+        const siteRows = siteNew.filter(r => r.site === site);
+        if (siteRows.length) {
+          siteRows.forEach(r => rows.push({ site, pkg: r.pkg, billingMode: r.billingMode, source: "站点新人", retailPrice: r.retailPrice, editId: r.id }));
+        } else if (generalNew.length) {
+          generalNew.forEach(g => rows.push({ site, pkg: g.pkg, billingMode: g.billingMode, source: "继承通用新人", retailPrice: g.retailPrice, editId: null, inheritedId: g.id }));
+        } else {
+          rows.push({ site, pkg: "—", billingMode: "—", source: "未配置", retailPrice: "—", editId: null });
+        }
+      });
+      return `<table>
+        <thead><tr><th>站点</th><th>新人套餐</th><th>计费</th><th>来源</th><th>首购价</th><th>操作</th></tr></thead>
+        <tbody>${rows.map(r => `<tr>
+          <td>${r.site}</td><td>${r.pkg}</td><td>${r.billingMode}</td>
+          <td>${r.source === "站点新人" ? '<span class="tag" style="background:#e8f4fd;color:#1677ff">站点新人</span>' : r.source === "继承通用新人" ? `<span style="color:var(--muted)">${r.source}</span>` : `<span style="color:var(--muted)">${r.source}</span>`}</td>
+          <td>${typeof r.retailPrice === "number" ? "¥" + r.retailPrice : r.retailPrice}</td>
+          <td>${r.editId ? `<button type="button" class="link-btn" data-edit-pricing="${r.editId}">编辑</button>` : r.inheritedId ? `<button type="button" class="link-btn" data-add-site-newcomer="${r.site}">设站点新人价</button>` : "—"}</td>
+        </tr>`).join("")}</tbody>
+      </table>`;
+    }
+
+    function renderPricingSiteInheritTable(allRows, siteNames) {
+      const general = allRows.filter(r => r.priceScope === "general");
+      const fallback = allRows.filter(r => r.priceScope === "fallback");
+      const siteOverrides = allRows.filter(r => r.priceScope === "site");
+      const rows = [];
+      siteNames.forEach(site => {
+        general.forEach(g => {
+          const ov = siteOverrides.find(s => s.site === site && s.pkg === g.pkg);
+          rows.push({
+            site, pkg: g.pkg, billingMode: g.billingMode,
+            source: ov ? "站点覆盖" : "继承通用",
+            retailPrice: ov ? ov.retailPrice : g.retailPrice,
+            editId: ov ? ov.id : null, inheritedId: ov ? null : g.id
+          });
+        });
+        fallback.forEach(f => {
+          rows.push({
+            site, pkg: f.pkg, billingMode: f.billingMode,
+            source: "继承默认",
+            retailPrice: f.retailPrice,
+            editId: null, inheritedId: f.id
+          });
+        });
+      });
+      return `<table>
+        <thead><tr><th>站点</th><th>套餐</th><th>计费</th><th>来源</th><th>生效零售价</th><th>操作</th></tr></thead>
+        <tbody>${rows.map(r => `<tr>
+          <td>${r.site}</td><td>${r.pkg}</td><td>${r.billingMode}</td>
+          <td>${r.source === "站点覆盖" ? '<span class="tag">站点覆盖</span>' : `<span style="color:var(--muted)">${r.source}</span>`}</td>
+          <td>¥${r.retailPrice}</td>
+          <td>${r.editId ? `<button type="button" class="link-btn" data-edit-pricing="${r.editId}">编辑</button>` : r.source === "站点覆盖" ? "—" : `<button type="button" class="link-btn" data-add-site-price="${r.site}|${r.pkg}">设站点价</button>`}</td>
+        </tr>`).join("")}</tbody>
+      </table>`;
+    }
+
     function renderPricing() {
       const tab = state.pricingTab;
       const tabs = [["pkg", "个人套餐价"], ["quota", "人天批发价"]];
@@ -5503,20 +5917,50 @@
       ).join("")}</div>`;
       let body = "";
       if (tab === "pkg") {
-        const rows = operatorPkgPrices.filter(r => r.operatorId === currentEntity().id);
-        body = `<section class="panel">
-          ${panelHead("个人套餐零售价", "城市+站点+SKU；须保留<strong>1天+单次</strong>渠道兜底 SKU", "pricing_pkg")}
+        const allRows = operatorPkgPrices.filter(r => r.operatorId === currentEntity().id);
+        const generalRows = allRows.filter(r => r.priceScope === "general");
+        const newcomerGeneralRows = allRows.filter(r => r.priceScope === "newcomer_general");
+        const fallbackRows = allRows.filter(r => r.priceScope === "fallback");
+        const siteOverrideRows = allRows.filter(r => r.priceScope === "site");
+        const newcomerSiteRows = allRows.filter(r => r.priceScope === "newcomer_site");
+        const siteNames = [...new Set(sites.filter(s => s.operatorId === currentEntity().id).map(s => s.name))];
+        const fallbackOk = fallbackRows.filter(r => r.status === "生效" && r.pkgType === "daily").length >= 1
+          && fallbackRows.filter(r => r.status === "生效" && r.pkgType === "single").length >= 1;
+        body = `
+        <section class="panel">
+          ${panelHead("通用套餐", "运营商默认定价；未单独配置的站点自动继承", "pricing_pkg_general", `<button type="button" class="btn" disabled title="演示">+ 新增通用 SKU</button>`)}
           <div class="panel-body orders-table-wrap">
-            <table>
-              <thead><tr><th>城市</th><th>站点</th><th>套餐</th><th>有效期</th><th>渠道兜底</th><th>零售价</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead>
-              <tbody>${rows.map(r => `<tr>
-                <td>${r.city}</td><td>${r.site || "（运营商默认）"}</td><td>${r.pkg}</td>
-                <td>${r.validityHours ? r.validityHours + "h" : "按 SKU"}</td>
-                <td>${r.channelFallback ? tag("必选") : "—"}</td>
-                <td>¥${r.retailPrice}</td><td>${tag(r.status)}</td><td>${r.updatedAt}</td>
-                <td><button type="button" class="link-btn" data-edit-pricing="${r.id}">编辑</button></td>
-              </tr>`).join("")}</tbody>
-            </table>
+            ${renderPricingPkgTable(generalRows)}
+          </div>
+        </section>
+        <section class="panel">
+          ${panelHead("通用新人套餐", "用户在该运营商首次个人套餐购买时可享；每用户仅一次", "pricing_pkg_newcomer_general", `<button type="button" class="btn" disabled title="演示">+ 新增新人 SKU</button>`)}
+          <div class="panel-body orders-table-wrap">
+            <p style="font-size:12px;color:var(--muted);margin:0 0 12px">${noteBtn("pricing_pkg_newcomer_general")} 不适用于渠道应急兜底；历史上任意支付成功个人套餐后不再展示。</p>
+            ${renderPricingPkgTable(newcomerGeneralRows, { showNewcomer: true })}
+          </div>
+        </section>
+        <section class="panel">
+          ${panelHead("默认套餐（渠道应急）", "渠道成员无预占人天时引导在线支付；须保持 1天畅换+单次 上架", "pricing_pkg_fallback")}
+          <div class="panel-body orders-table-wrap">
+            ${!fallbackOk ? `<p style="color:var(--red);font-size:13px;margin:0 0 12px">⚠ 缺少生效中的渠道应急 SKU（1天 + 单次），渠道自费兜底路径将不可用。</p>` : ""}
+            ${renderPricingPkgTable(fallbackRows, { readonlyScope: true })}
+          </div>
+        </section>
+        <section class="panel">
+          ${panelHead("站点套餐", "覆盖通用套餐价；默认套餐继承运营商默认价", "pricing_pkg_site", `<button type="button" class="btn" disabled title="演示">+ 站点覆盖</button>`)}
+          <div class="panel-body orders-table-wrap">
+            <p style="font-size:12px;color:var(--muted);margin:0 0 12px">${noteBtn("pricing_pkg")}${noteBtn("pricing_pkg_site")} 下表展示各站点<strong>生效价</strong>及来源；仅「站点覆盖」行可编辑，其余继承通用/默认。</p>
+            ${siteNames.length ? renderPricingSiteInheritTable(allRows, siteNames) : "<p>暂无站点</p>"}
+            ${siteOverrideRows.length ? `<details style="margin-top:16px"><summary style="cursor:pointer;font-size:13px;color:var(--muted)">已配置站点覆盖 (${siteOverrideRows.length})</summary><div style="margin-top:8px">${renderPricingPkgTable(siteOverrideRows)}</div></details>` : ""}
+          </div>
+        </section>
+        <section class="panel">
+          ${panelHead("站点新人套餐", "按站点覆盖新人价；未配置则首购继承通用新人套餐", "pricing_pkg_newcomer_site", `<button type="button" class="btn" disabled title="演示">+ 站点新人价</button>`)}
+          <div class="panel-body orders-table-wrap">
+            <p style="font-size:12px;color:var(--muted);margin:0 0 12px">${noteBtn("pricing_pkg_newcomer_site")} 首购解析顺序：<strong>站点新人</strong> &gt; <strong>通用新人</strong> &gt; 常规套餐价。</p>
+            ${siteNames.length ? renderPricingNewcomerSiteTable(allRows, siteNames) : "<p>暂无站点</p>"}
+            ${newcomerSiteRows.length ? `<details style="margin-top:16px"><summary style="cursor:pointer;font-size:13px;color:var(--muted)">已配置站点新人 (${newcomerSiteRows.length})</summary><div style="margin-top:8px">${renderPricingPkgTable(newcomerSiteRows, { showNewcomer: true })}</div></details>` : ""}
           </div>
         </section>`;
       } else {
@@ -5663,6 +6107,7 @@
           每日 <strong>${INTER_OP_CLEAR_TIME}</strong> 日清（<strong>保证金优先</strong>，保证金为 0 才启用信用额度）。${noteBtn("inter_op_clearing")}
         </div>
         ${creditWarn}
+        <p style="margin:0 0 14px;font-size:13px">${noteBtn("operator_deposit")} 保证金不足？<button type="button" class="link-btn" data-view-jump="depositAccount">前往保证金账户对公充值</button></p>
         <div class="kpi-grid">
           ${kpi("平台保证金", credit ? "¥" + credit.depositBalance.toLocaleString("zh-CN") : "—", deductMode === "保证金" ? "当前扣款账户" : "已用尽", "保", "operator_deposit")}
           ${kpi("信用额度", credit ? "¥" + credit.creditLimit.toLocaleString("zh-CN") : "—", usingCredit ? "已启用" : "保证金>0 未启用", "额", "operator_credit")}
@@ -6113,6 +6558,7 @@
         const siteSet = contract?.sites?.length ? new Set(contract.sites) : null;
         const wholesale = contract ? contract.wholesalePrice : platformAccrualDayPrice();
         const rows = operatorPkgPrices.filter(r => {
+          if (r.priceScope === "newcomer_general" || r.priceScope === "newcomer_site") return false;
           if (r.channelFallback) return f.city === "全部" || r.city === f.city;
           if (siteSet && r.site && !siteSet.has(r.site)) return false;
           if (f.city !== "全部" && r.city !== f.city) return false;
@@ -6120,7 +6566,7 @@
           return true;
         });
         body = `<section class="panel">
-          ${panelHead("骑手零售价（只读）", "无预占人天时默认推荐<strong>1天/单次</strong>兜底 SKU（购后24h）", "day_pool_retail")}
+          ${panelHead("骑手零售价（只读）", "无预占人天时默认推荐<strong>1天畅换/单次</strong>兜底 SKU（购后24h）", "day_pool_retail")}
           <div class="panel-body orders-table-wrap">
             <table>
               <thead><tr><th>城市</th><th>站点</th><th>套餐</th><th>有效期</th><th>渠道兜底</th><th>零售价</th><th>合同批发价</th><th>状态</th></tr></thead>
@@ -6262,6 +6708,7 @@
         orders: renderOrders(),
         flows: renderFlows(),
         interOp: renderInterOp(),
+        depositAccount: renderDepositAccount(),
         platformFee: renderPlatformFee(),
         employees: renderEmployees(),
         partnerProfit: renderPartnerProfit(),
@@ -6270,6 +6717,7 @@
         accounts: renderAccounts(),
         dayPool: renderDayPool(),
         operators: renderOperators(),
+        depositManage: renderDepositManage(),
         deviceBinding: renderDeviceBinding(),
         l1Pricing: renderL1Pricing(),
         platformUsers: renderPlatformUsers(),
@@ -6365,6 +6813,14 @@
       document.querySelectorAll("[data-edit-pricing]").forEach(btn => {
         btn.onclick = () => openPricingForm(btn.dataset.editPricing);
       });
+      document.querySelectorAll("[data-add-site-price]").forEach(btn => {
+        const [site, pkg] = (btn.dataset.addSitePrice || "").split("|");
+        btn.onclick = () => window.alert(`演示：为站点「${site}」的「${pkg}」设置覆盖价（Mock 未实现表单）`);
+      });
+      document.querySelectorAll("[data-add-site-newcomer]").forEach(btn => {
+        const site = btn.dataset.addSiteNewcomer || "";
+        btn.onclick = () => window.alert(`演示：为站点「${site}」配置站点新人套餐（Mock 未实现表单）`);
+      });
       document.querySelectorAll("[data-pool-form]").forEach(btn => {
         btn.onclick = e => {
           e.stopPropagation();
@@ -6448,21 +6904,57 @@
       document.querySelectorAll("[data-confirm-channel-po]").forEach(btn => {
         btn.onclick = () => { if (confirmChannelSalesOrder(btn.dataset.confirmChannelPo)) render(); };
       });
-      document.querySelectorAll("[data-simulate-online-pay]").forEach(btn => {
+      document.querySelectorAll("[data-depstab]").forEach(btn => {
+        btn.onclick = () => { state.depositTab = btn.dataset.depstab; render(); };
+      });
+      const submitDepBtn = document.querySelector("#submitDepositRecharge");
+      if (submitDepBtn) {
+        submitDepBtn.onclick = () => {
+          const form = document.querySelector("#depositRechargeForm");
+          if (!form) return;
+          const data = Object.fromEntries(new FormData(form).entries());
+          const err = submitDepositRecharge(data);
+          if (err) { window.alert(err); return; }
+          window.alert("已提交充值申请，请等待平台财务核对银行到账后确认入账。");
+          render();
+        };
+      }
+      document.querySelectorAll("[data-confirm-deposit]").forEach(btn => {
         btn.onclick = () => {
-          const o = channelSalesOrders.find(x => x.id === btn.dataset.simulateOnlinePay);
-          if (!o || o.payChannel !== "online" || o.orderStatus === "已完成") return;
-          o.orderStatus = "已完成";
-          o.payStatus = "已付款";
-          o.payTime = new Date().toISOString().slice(0, 19).replace("T", " ");
-          if (!o.paymentNo) o.paymentNo = (o.payMethod.includes("微信") ? "WX" : "ALI") + Date.now();
-          creditPoolFromChannelOrder(o);
-          window.alert("演示：支付回调成功，订单 " + o.id + " 已实时更新为已完成");
+          if (confirmDepositRecharge(btn.dataset.confirmDeposit)) {
+            window.alert("已确认到账，保证金余额已增加。");
+            render();
+          }
+        };
+      });
+      document.querySelectorAll("[data-reject-deposit]").forEach(btn => {
+        btn.onclick = () => {
+          const reason = window.prompt("驳回原因", "转账金额与申请不一致");
+          if (reason === null) return;
+          if (rejectDepositRecharge(btn.dataset.rejectDeposit, reason)) render();
+        };
+      });
+      document.querySelectorAll("[data-manual-deposit]").forEach(btn => {
+        btn.onclick = () => {
+          const amt = Number(window.prompt("手工入账金额（元）", "1000"));
+          if (!amt || amt <= 0) return;
+          const remark = window.prompt("备注", "线下补录") || "手工入账";
+          appendDepositLedger(btn.dataset.manualDeposit, "手工入账", amt, remark, "平台财务");
+          const o = depositRechargeOrders.find(x => x.operatorId === btn.dataset.manualDeposit && x.status === "待确认");
           render();
         };
       });
-      document.querySelectorAll("[data-adjust-credit]").forEach(btn => {
-        btn.onclick = () => window.alert("演示：保证金充值 / 信用额度调整（详设补充）");
+      document.querySelectorAll("[data-adjust-credit-limit]").forEach(btn => {
+        btn.onclick = () => {
+          const credit = creditForOperator(btn.dataset.adjustCreditLimit);
+          if (!credit) return;
+          const v = Number(window.prompt("信用额度上限（元）", String(credit.creditLimit)));
+          if (!v || v < 0) return;
+          credit.creditLimit = v;
+          credit.available = Math.max(0, v - credit.used);
+          credit.crossSwapEnabled = credit.available > 0 || credit.depositBalance > 0;
+          render();
+        };
       });
       const saveL1Btn = document.querySelector("#saveL1Pricing");
       if (saveL1Btn) saveL1Btn.onclick = saveL1PricingForm;
@@ -6490,6 +6982,7 @@
       document.querySelectorAll("[data-view-jump]").forEach(btn => {
         btn.onclick = () => {
           if (btn.dataset.empTab) state.employeeTab = btn.dataset.empTab;
+          if (btn.dataset.depstabJump) state.depositTab = btn.dataset.depstabJump;
           state.view = btn.dataset.viewJump;
           closeDrawer();
           render();
@@ -6579,6 +7072,13 @@
     document.querySelector("#bindForm").addEventListener("submit", e => { e.preventDefault(); saveBindForm(); });
 
     render();
+
+    (function () {
+      var link = document.getElementById("navDocsLink");
+      if (link && !/\/prototype(\/|$)/.test(location.pathname)) {
+        link.href = "documentation/index.html";
+      }
+    })();
   </script>
 </body>
 </html>

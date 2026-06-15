@@ -45,8 +45,11 @@ python3 main.py
 
 | 内容 | 链接 |
 |------|------|
-| **交互原型** | https://lihuoxiu555.github.io/rider-swap-operator-prototype/ |
+| **运营商后台原型** | https://lihuoxiu555.github.io/rider-swap-operator-prototype/ |
 | **产品文档浏览器** | https://lihuoxiu555.github.io/rider-swap-operator-prototype/documentation/ |
+| **骑手端原型** | https://lihuoxiu555.github.io/rider-swap-operator-prototype/mobile/ |
+
+侧栏「→ 产品文档 / 骑手端」在本地（`/prototype/`）与 GitHub Pages 会自动跳转到对应路径。
 
 仓库 **Settings → Pages**：Source 选 **Deploy from a branch**，Branch `main`，Folder **`/docs`**。`git push` 后约 1～2 分钟生效。
 

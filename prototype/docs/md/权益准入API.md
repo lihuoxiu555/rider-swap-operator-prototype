@@ -87,7 +87,7 @@
 | 字段 | 说明 |
 |------|------|
 | `enabled` | 是否允许转在线自费 |
-| `recommended_skus` | 推荐 SKU：`1day`（1天套餐）、`single`（单次换电） |
+| `recommended_skus` | 推荐 SKU：`1day`（1天畅换）、`single`（单次换电） |
 | `prices` | 零售价（元），来自运营商「定价管理」渠道兜底 SKU |
 | `validity_hours` | 购后有效时长（默认 24h） |
 | `note` | 展示文案 |
